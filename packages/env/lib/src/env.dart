@@ -1,7 +1,13 @@
-/// {@template env}
-/// A Very Good Project created by Very Good CLI.
-/// {@endtemplate}
-class Env {
-  /// {@macro env}
-  const Env();
+/// Environment variable keys
+enum Env {
+  /// Supabase project URL
+  supabaseUrl('SUPABASE_URL'),
+
+  /// Supabase anon key
+  supabaseAnonKey('SUPABASE_ANON_KEY');
+
+  const Env(this.value);
+
+  /// The string value of the environment variable key.
+  final String value;
 }

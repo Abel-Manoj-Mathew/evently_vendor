@@ -1,13 +1,16 @@
-// Not required for test files
-// ignore_for_file: prefer_const_constructors
-
-import 'package:flutter_test/flutter_test.dart';
 import 'package:env/env.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('Env', () {
-    test('can be instantiated', () {
-      expect(Env(), isNotNull);
+    test('EnvDev has valid static fields', () {
+      expect(EnvDev.supabaseUrl, isA<String>());
+      expect(EnvDev.supabaseAnonKey, isA<String>());
+    });
+
+    test('EnvProd has valid static fields', () {
+      expect(EnvProd.supabaseUrl, isA<String>());
+      expect(EnvProd.supabaseAnonKey, isA<String>());
     });
   });
 }
