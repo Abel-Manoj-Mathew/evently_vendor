@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "480183433763",
+    "project_id": "evently-vendor-prod",
+    "storage_bucket": "evently-vendor-prod.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:480183433763:android:84c3b56815277aff0acf96",
+        "android_client_info": {
+          "package_name": "com.example.verygoodcore.evently_vendor"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAiko1J_gWEb4zL0ThH3r42bZJwEABvrUM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
