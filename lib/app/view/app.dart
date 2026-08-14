@@ -1,4 +1,4 @@
-import 'package:evently_vendor/counter/counter.dart';
+import 'package:evently_vendor/auth/login/login.dart';
 import 'package:evently_vendor/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
@@ -16,7 +16,7 @@ class App extends StatelessWidget {
       ),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const CounterPage(),
+      home: const LoginPage(),
     );
   }
 }
