@@ -26,7 +26,8 @@ class AppBlocObserver extends BlocObserver {
 }
 
 Future<void> bootstrap(
-  FutureOr<Widget> Function(NotificationsRepository notificationsRepository) builder, {
+  FutureOr<Widget> Function(NotificationsRepository notificationsRepository)
+      builder, {
   required FirebaseOptions firebaseOptions,
 }) async {
   FlutterError.onError = (details) {

@@ -13,7 +13,9 @@ void main() {
 
     setUp(() {
       firebaseMessaging = MockFirebaseMessaging();
-      client = FirebaseNotificationsClient(firebaseMessaging: firebaseMessaging);
+      client = FirebaseNotificationsClient(
+        firebaseMessaging: firebaseMessaging,
+      );
     });
 
     test('can be instantiated', () {
@@ -38,7 +40,8 @@ void main() {
                   lockScreen: AppleNotificationSetting.enabled,
                   notificationCenter: AppleNotificationSetting.enabled,
                   showPreviews: AppleShowPreviewSetting.always,
-                  providesAppNotificationSettings: AppleNotificationSetting.notSupported,
+                  providesAppNotificationSettings:
+                      AppleNotificationSetting.notSupported,
                 ));
 
         await expectLater(client.requestPermission(), completes);
