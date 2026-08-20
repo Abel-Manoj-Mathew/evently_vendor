@@ -1,5 +1,6 @@
 import 'package:evently_vendor/auth/login/cubit/login_cubit.dart';
 import 'package:evently_vendor/auth/login/widgets/widgets.dart';
+import 'package:evently_vendor/auth/mobile_number/mobile_number.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -8,25 +9,30 @@ class LoginPage extends StatelessWidget {
 
   static Route<void> route() {
     return MaterialPageRoute<void>(
-      builder: (_) => BlocProvider(
-        create: (_) => LoginCubit(),
-        child: const LoginPage(),
-      ),
+      builder: (_) => const LoginPage(),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return LoginView(
-      onContinueWithMobile: () {
-        context.read<LoginCubit>().continueWithMobile();
-      },
-      onTermsPressed: () {
-        // TODO(developer): Navigate to terms of service
-      },
-      onPrivacyPressed: () {
-        // TODO(developer): Navigate to privacy policy
-      },
+    return BlocProvider(
+      create: (_) => LoginCubit(),
+      child: Builder(
+        builder: (context) {
+          return LoginView(
+            onContinueWithMobile: () {
+              context.read<LoginCubit>().continueWithMobile();
+              Navigator.of(context).push(MobileNumberPage.route());
+            },
+            onTermsPressed: () {
+              // TODO(developer): Navigate to terms of service
+            },
+            onPrivacyPressed: () {
+              // TODO(developer): Navigate to privacy policy
+            },
+          );
+        },
+      ),
     );
   }
 }
