@@ -39,24 +39,26 @@ void main() {
       expect(continuePressed, isTrue);
     });
 
-    testWidgets('navigates to MobileNumberPage when MobileLoginButton is tapped',
-        (tester) async {
-      tester.view.physicalSize = const Size(375, 812);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets(
+      'navigates to MobileNumberPage when MobileLoginButton is tapped',
+      (tester) async {
+        tester.view.physicalSize = const Size(375, 812);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: LoginPage(),
-        ),
-      );
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: LoginPage(),
+          ),
+        );
 
-      await tester.tap(find.byType(MobileLoginButton));
-      await tester.pumpAndSettle();
+        await tester.tap(find.byType(MobileLoginButton));
+        await tester.pumpAndSettle();
 
-      expect(find.byType(MobileNumberPage), findsOneWidget);
-    });
+        expect(find.byType(MobileNumberPage), findsOneWidget);
+      },
+    );
 
     test('route returns MaterialPageRoute', () {
       final route = LoginPage.route();

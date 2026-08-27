@@ -43,7 +43,8 @@ class InMemoryNotificationsClient implements NotificationsClient {
 Future<void> bootstrap(
   FutureOr<Widget> Function(
     NotificationsRepository notificationsRepository,
-  ) builder, {
+  )
+  builder, {
   required FirebaseOptions firebaseOptions,
 }) async {
   FlutterError.onError = (details) {
@@ -108,5 +109,3 @@ Future<void> bootstrap(
 
   runApp(await builder(notificationsRepository));
 }
-
-

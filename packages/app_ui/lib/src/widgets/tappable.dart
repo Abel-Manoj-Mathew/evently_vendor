@@ -1,6 +1,5 @@
 // ignore_for_file: avoid_positional_boolean_parameters, one_member_abstracts, prefer_initializing_formals // Rationale: Complex tappable button wrapper logic
 
-
 import 'dart:async';
 import 'dart:ui';
 

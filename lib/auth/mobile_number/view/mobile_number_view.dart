@@ -105,7 +105,8 @@ class MobileNumberView extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'We will send a 6-digit verification code to confirm your account identity.',
+                      'We will send a 6-digit verification code to confirm '
+                      'your account identity.',
                       style: TextStyle(
                         fontSize: 13.5,
                         color: Color(0xFF6B7280),
@@ -119,13 +120,13 @@ class MobileNumberView extends StatelessWidget {
                       countryCode: state.countryCode,
                       onPhoneNumberChanged: (val) {
                         context.read<MobileNumberBloc>().add(
-                              MobileNumberPhoneNumberChanged(val),
-                            );
+                          MobileNumberPhoneNumberChanged(val),
+                        );
                       },
                       onCountryCodeChanged: (code) {
                         context.read<MobileNumberBloc>().add(
-                              MobileNumberCountryCodeChanged(code),
-                            );
+                          MobileNumberCountryCodeChanged(code),
+                        );
                       },
                     ),
                     const SizedBox(height: 20),
@@ -152,8 +153,8 @@ class MobileNumberView extends StatelessWidget {
               child: SendOtpButton(
                 onPressed: () {
                   context.read<MobileNumberBloc>().add(
-                        const MobileNumberSubmitted(),
-                      );
+                    const MobileNumberSubmitted(),
+                  );
                   onSendOtpPressed();
                 },
                 isEnabled: state.isValid,

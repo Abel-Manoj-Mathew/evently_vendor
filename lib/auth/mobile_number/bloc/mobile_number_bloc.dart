@@ -44,7 +44,7 @@ class MobileNumberBloc extends Bloc<MobileNumberEvent, MobileNumberState> {
     try {
       await Future<void>.delayed(const Duration(milliseconds: 300));
       emit(state.copyWith(status: MobileNumberStatus.success));
-    } catch (e) {
+    } on Exception {
       emit(
         state.copyWith(
           status: MobileNumberStatus.failure,

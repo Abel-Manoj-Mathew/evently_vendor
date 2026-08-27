@@ -1,13 +1,16 @@
 /// {@template notifications_client}
-/// A generic interface for notification services.
+/// A Very Good Project created by Very Good CLI.
 /// {@endtemplate}
-abstract interface class NotificationsClient {
-  /// Requests permission to receive notifications.
-  Future<void> requestPermission();
+abstract class NotificationsClient {
+  /// {@macro notifications_client}
+  const NotificationsClient();
 
-  /// Fetches the current notification token.
+  /// Fetches the push notification token.
   Future<String?> fetchToken();
 
-  /// A stream of refreshed notification tokens.
+  /// Requests permission to send push notifications.
+  Future<void> requestPermission();
+
+  /// A stream that emits when the push notification token is refreshed.
   Stream<String> onTokenRefresh();
 }

@@ -27,30 +27,32 @@ void main() {
 
     group('requestPermission', () {
       test('completes normally when Firebase succeeds', () async {
-        when(() => firebaseMessaging.requestPermission())
-            .thenAnswer((_) async => const NotificationSettings(
-                  authorizationStatus: AuthorizationStatus.authorized,
-                  alert: AppleNotificationSetting.enabled,
-                  announcement: AppleNotificationSetting.enabled,
-                  badge: AppleNotificationSetting.enabled,
-                  carPlay: AppleNotificationSetting.enabled,
-                  criticalAlert: AppleNotificationSetting.enabled,
-                  sound: AppleNotificationSetting.enabled,
-                  timeSensitive: AppleNotificationSetting.enabled,
-                  lockScreen: AppleNotificationSetting.enabled,
-                  notificationCenter: AppleNotificationSetting.enabled,
-                  showPreviews: AppleShowPreviewSetting.always,
-                  providesAppNotificationSettings:
-                      AppleNotificationSetting.notSupported,
-                ));
+        when(() => firebaseMessaging.requestPermission()).thenAnswer(
+          (_) async => const NotificationSettings(
+            authorizationStatus: AuthorizationStatus.authorized,
+            alert: AppleNotificationSetting.enabled,
+            announcement: AppleNotificationSetting.enabled,
+            badge: AppleNotificationSetting.enabled,
+            carPlay: AppleNotificationSetting.enabled,
+            criticalAlert: AppleNotificationSetting.enabled,
+            sound: AppleNotificationSetting.enabled,
+            timeSensitive: AppleNotificationSetting.enabled,
+            lockScreen: AppleNotificationSetting.enabled,
+            notificationCenter: AppleNotificationSetting.enabled,
+            showPreviews: AppleShowPreviewSetting.always,
+            providesAppNotificationSettings:
+                AppleNotificationSetting.notSupported,
+          ),
+        );
 
         await expectLater(client.requestPermission(), completes);
         verify(() => firebaseMessaging.requestPermission()).called(1);
       });
 
       test('throws RequestPermissionFailure on Firebase error', () async {
-        when(() => firebaseMessaging.requestPermission())
-            .thenThrow(Exception('oops'));
+        when(
+          () => firebaseMessaging.requestPermission(),
+        ).thenThrow(Exception('oops'));
 
         await expectLater(
           client.requestPermission(),
@@ -62,8 +64,7 @@ void main() {
     group('fetchToken', () {
       test('returns token when Firebase succeeds', () async {
         const token = 'test_token';
-        when(() => firebaseMessaging.getToken())
-            .thenAnswer((_) async => token);
+        when(() => firebaseMessaging.getToken()).thenAnswer((_) async => token);
 
         final result = await client.fetchToken();
         expect(result, equals(token));

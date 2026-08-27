@@ -32,7 +32,9 @@ void main() {
       expect(route, isA<MaterialPageRoute<void>>());
     });
 
-    testWidgets('entering phone number enables Send OTP button', (tester) async {
+    testWidgets('entering phone number enables Send OTP button', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(375, 812);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);

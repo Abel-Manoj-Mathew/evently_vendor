@@ -12,8 +12,8 @@ void main() {
       bloc = MobileNumberBloc();
     });
 
-    tearDown(() {
-      bloc.close();
+    tearDown(() async {
+      await bloc.close();
     });
 
     test('initial state is correct', () {
@@ -24,7 +24,8 @@ void main() {
     blocTest<MobileNumberBloc, MobileNumberState>(
       'emits updated state when MobileNumberPhoneNumberChanged is added',
       build: MobileNumberBloc.new,
-      act: (bloc) => bloc.add(const MobileNumberPhoneNumberChanged('9876543210')),
+      act: (bloc) =>
+          bloc.add(const MobileNumberPhoneNumberChanged('9876543210')),
       expect: () => [
         const MobileNumberState(
           phoneNumber: '9876543210',
@@ -48,14 +49,16 @@ void main() {
     );
 
     blocTest<MobileNumberBloc, MobileNumberState>(
-      'does nothing when MobileNumberSubmitted is added with invalid phone number',
+      'does nothing when MobileNumberSubmitted is added '
+      'with invalid phone number',
       build: MobileNumberBloc.new,
       act: (bloc) => bloc.add(const MobileNumberSubmitted()),
       expect: () => <MobileNumberState>[],
     );
 
     blocTest<MobileNumberBloc, MobileNumberState>(
-      'emits submitting and success when MobileNumberSubmitted is added with valid phone number',
+      'emits submitting and success when MobileNumberSubmitted is added '
+      'with valid phone number',
       build: MobileNumberBloc.new,
       seed: () => const MobileNumberState(phoneNumber: '9876543210'),
       act: (bloc) => bloc.add(const MobileNumberSubmitted()),

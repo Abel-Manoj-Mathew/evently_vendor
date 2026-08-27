@@ -25,7 +25,8 @@ class SecurityNoteCard extends StatelessWidget {
           SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Your mobile number is safe with us. We use it solely to verify your identity and manage your vendor business account.',
+              'Your mobile number is safe with us. We use it solely to '
+              'verify your identity and manage your vendor business account.',
               style: TextStyle(
                 fontSize: 12,
                 color: Color(0xFF6B7280),
