@@ -384,17 +384,21 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                                             color: const Color(0xFFE5E7EB),
                                           ),
                                   ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    cat,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: isSelected
-                                          ? const Color(0xFFFFFFFF)
-                                          : const Color(0xFF111827),
-                                      fontFamily: 'Inter',
-                                    ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        cat,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: isSelected
+                                              ? const Color(0xFFFFFFFF)
+                                              : const Color(0xFF111827),
+                                          fontFamily: 'Inter',
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               );
