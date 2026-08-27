@@ -18,6 +18,7 @@ class App extends StatelessWidget {
     return RepositoryProvider.value(
       value: _notificationsRepository,
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         theme: const AppTheme().theme,
         darkTheme: const AppDarkTheme().theme,
         localizationsDelegates: AppLocalizations.localizationsDelegates,

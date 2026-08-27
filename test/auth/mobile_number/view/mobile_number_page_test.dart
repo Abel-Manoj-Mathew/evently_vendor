@@ -1,14 +1,11 @@
-import 'package:evently_vendor/auth/mobile_number/bloc/mobile_number_bloc.dart';
 import 'package:evently_vendor/auth/mobile_number/view/mobile_number_page.dart';
-import 'package:evently_vendor/auth/mobile_number/view/mobile_number_view.dart';
-import 'package:evently_vendor/auth/mobile_number/widgets/widgets.dart';
+import 'package:evently_vendor/auth/mobile_number/widgets/mobile_number_input_field.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('MobileNumberPage', () {
-    testWidgets('renders MobileNumberView', (tester) async {
+    testWidgets('renders MobileNumberPage', (tester) async {
       tester.view.physicalSize = const Size(375, 812);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -20,19 +17,13 @@ void main() {
         ),
       );
 
-      expect(find.byType(MobileNumberView), findsOneWidget);
       expect(find.text('Enter your mobile number'), findsOneWidget);
       expect(find.byType(MobileNumberInputField), findsOneWidget);
-      expect(find.byType(SecurityNoteCard), findsOneWidget);
-      expect(find.byType(SendOtpButton), findsOneWidget);
+      expect(find.byType(ElevatedButton), findsOneWidget);
+      expect(find.text('Continue'), findsOneWidget);
     });
 
-    test('route returns MaterialPageRoute', () {
-      final route = MobileNumberPage.route();
-      expect(route, isA<MaterialPageRoute<void>>());
-    });
-
-    testWidgets('entering phone number enables Send OTP button', (
+    testWidgets('entering phone number enables Continue button', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(375, 812);
@@ -41,14 +32,8 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: BlocProvider(
-            create: (_) => MobileNumberBloc(),
-            child: MobileNumberView(
-              onBackPressed: () {},
-              onSendOtpPressed: () {},
-            ),
-          ),
+        const MaterialApp(
+          home: MobileNumberPage(),
         ),
       );
 

@@ -9,6 +9,7 @@ import 'package:firebase_notifications_client/firebase_notifications_client.dart
 import 'package:flutter/widgets.dart';
 import 'package:notifications_client/notifications_client.dart';
 import 'package:notifications_repository/notifications_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AppBlocObserver extends BlocObserver {
   const AppBlocObserver();
@@ -54,6 +55,11 @@ Future<void> bootstrap(
   Bloc.observer = const AppBlocObserver();
 
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: 'https://qphwywulvgwaqeprifqs.supabase.co',
+    anonKey: 'sb_publishable_92Av1z6wGLFYvbRbyol-sw_Ha9LqRro',
+  );
 
   NotificationsRepository notificationsRepository;
 

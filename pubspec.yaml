@@ -29,6 +29,7 @@ dependencies:
     path: packages/notifications_repository
   shared:
     path: packages/shared
+  supabase_flutter: ^2.17.2
 
 dev_dependencies:
   bloc_lint: ^0.4.1

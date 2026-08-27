@@ -1,4 +1,3 @@
-import 'package:evently_vendor/auth/mobile_number/widgets/country_code_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -18,72 +17,101 @@ class MobileNumberInputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Mobile Number',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF111827),
-            fontFamily: 'Inter',
-          ),
+    return TextField(
+      keyboardType: TextInputType.phone,
+      inputFormatters: [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(10),
+      ],
+      onChanged: onPhoneNumberChanged,
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: Color(0xFF111827),
+        letterSpacing: 0.5,
+        fontFamily: 'Inter',
+      ),
+      decoration: InputDecoration(
+        hintText: 'Mobile Number',
+        hintStyle: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w400,
+          color: Color(0xFF9CA3AF),
+          letterSpacing: 0,
+          fontFamily: 'Inter',
         ),
-        const SizedBox(height: 8),
-        Container(
-          height: 52,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: const Color(0xFFE7E7E7),
-              width: 1.5,
-            ),
-          ),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(vertical: 18),
+        // Use prefixIcon to put the country code inside the main text field
+        prefixIcon: IntrinsicHeight(
           child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              CountryCodeSelector(
-                selectedCode: countryCode,
-                onChanged: onCountryCodeChanged,
-              ),
-              Container(
-                width: 1,
-                height: 28,
-                color: const Color(0xFFE7E7E7),
-              ),
-              Expanded(
-                child: TextField(
-                  keyboardType: TextInputType.phone,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(10),
-                  ],
-                  onChanged: onPhoneNumberChanged,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF111827),
-                    letterSpacing: 0.5,
-                    fontFamily: 'Inter',
-                  ),
-                  decoration: const InputDecoration(
-                    hintText: '98765 43210',
-                    hintStyle: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: Color(0xFF9CA3AF),
-                      fontFamily: 'Inter',
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 14),
+              GestureDetector(
+                onTap: () {
+                  // TODO: Implement country picker
+                },
+                child: Container(
+                  color: Colors.transparent,
+                  padding: const EdgeInsets.only(left: 16, right: 12),
+                  child: Row(
+                    children: [
+                      Text(
+                        countryCode.isEmpty ? '+91' : countryCode,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF111827),
+                          fontFamily: 'Inter',
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 20,
+                        color: Color(0xFF9CA3AF),
+                      ),
+                    ],
                   ),
                 ),
               ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: VerticalDivider(
+                  width: 1,
+                  thickness: 1.5,
+                  color: Color(0xFFE5E7EB),
+                ),
+              ),
+              const SizedBox(width: 16),
             ],
           ),
         ),
-      ],
+        // Use suffixIcon to clear text when there is input
+        suffixIconConstraints: const BoxConstraints(maxHeight: 40, maxWidth: 40),
+        suffixIcon: phoneNumber.isNotEmpty
+            ? GestureDetector(
+                onTap: () => onPhoneNumberChanged(''),
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFE5E7EB),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      size: 16,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                ),
+              )
+            : null,
+      ),
     );
   }
 }
