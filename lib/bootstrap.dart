@@ -7,6 +7,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_notifications_client/firebase_notifications_client.dart';
 import 'package:flutter/widgets.dart';
+import 'package:notifications_client/notifications_client.dart';
 import 'package:notifications_repository/notifications_repository.dart';
 
 class AppBlocObserver extends BlocObserver {
@@ -25,8 +26,24 @@ class AppBlocObserver extends BlocObserver {
   }
 }
 
+/// Fallback [NotificationsClient] when Firebase is not supported or available.
+class InMemoryNotificationsClient implements NotificationsClient {
+  const InMemoryNotificationsClient();
+
+  @override
+  Future<String?> fetchToken() async => null;
+
+  @override
+  Stream<String> onTokenRefresh() => const Stream.empty();
+
+  @override
+  Future<void> requestPermission() async {}
+}
+
 Future<void> bootstrap(
-  FutureOr<Widget> Function(NotificationsRepository notificationsRepository) builder, {
+  FutureOr<Widget> Function(
+    NotificationsRepository notificationsRepository,
+  ) builder, {
   required FirebaseOptions firebaseOptions,
 }) async {
   FlutterError.onError = (details) {
@@ -36,39 +53,60 @@ Future<void> bootstrap(
   Bloc.observer = const AppBlocObserver();
 
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: firebaseOptions);
 
-  // Background handler
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  NotificationsRepository notificationsRepository;
 
-  // Foreground handler
-  FirebaseMessaging.onMessage.listen((message) {
-    log('Got a message whilst in the foreground!');
-    log('Message data: ${message.data}');
+  try {
+    await Firebase.initializeApp(options: firebaseOptions);
 
-    if (message.notification != null) {
-      log('Message also contained a notification: ${message.notification}');
-    }
-  });
+    // Background handler
+    FirebaseMessaging.onBackgroundMessage(
+      firebaseMessagingBackgroundHandler,
+    );
 
-  // Tap handler (App opened from notification)
-  await FirebaseMessaging.instance.getInitialMessage().then((message) {
-    if (message != null) {
-      log('App opened from terminated state by message: ${message.messageId}');
-    }
-  });
+    // Foreground handler
+    FirebaseMessaging.onMessage.listen((message) {
+      log('Got a message whilst in the foreground!');
+      log('Message data: ${message.data}');
 
-  FirebaseMessaging.onMessageOpenedApp.listen((message) {
-    log('App opened from background state by message: ${message.messageId}');
-  });
+      if (message.notification != null) {
+        log('Message also contained a notification: ${message.notification}');
+      }
+    });
 
-  final firebaseMessaging = FirebaseMessaging.instance;
-  final notificationsClient = FirebaseNotificationsClient(
-    firebaseMessaging: firebaseMessaging,
-  );
-  final notificationsRepository = NotificationsRepository(
-    notificationsClient: notificationsClient,
-  );
+    // Tap handler (App opened from notification)
+    await FirebaseMessaging.instance.getInitialMessage().then((message) {
+      if (message != null) {
+        log(
+          'App opened from terminated state by message: ${message.messageId}',
+        );
+      }
+    });
+
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      log(
+        'App opened from background state by message: ${message.messageId}',
+      );
+    });
+
+    final firebaseMessaging = FirebaseMessaging.instance;
+    final notificationsClient = FirebaseNotificationsClient(
+      firebaseMessaging: firebaseMessaging,
+    );
+    notificationsRepository = NotificationsRepository(
+      notificationsClient: notificationsClient,
+    );
+  } on Object catch (error, stackTrace) {
+    log(
+      'Firebase initialization error: $error',
+      stackTrace: stackTrace,
+    );
+    notificationsRepository = const NotificationsRepository(
+      notificationsClient: InMemoryNotificationsClient(),
+    );
+  }
 
   runApp(await builder(notificationsRepository));
 }
+
+

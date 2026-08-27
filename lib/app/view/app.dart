@@ -1,3 +1,4 @@
+import 'package:app_ui/app_ui.dart';
 import 'package:evently_vendor/auth/login/login.dart';
 import 'package:evently_vendor/l10n/l10n.dart';
 import 'package:flutter/material.dart';
@@ -17,12 +18,8 @@ class App extends StatelessWidget {
     return RepositoryProvider.value(
       value: _notificationsRepository,
       child: MaterialApp(
-        theme: ThemeData(
-          appBarTheme: AppBarTheme(
-            backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-          ),
-          useMaterial3: true,
-        ),
+        theme: const AppTheme().theme,
+        darkTheme: const AppDarkTheme().theme,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: const LoginPage(),

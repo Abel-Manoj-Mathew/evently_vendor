@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:evently_vendor/auth/login/cubit/login_cubit.dart';
 import 'package:evently_vendor/auth/login/widgets/widgets.dart';
 import 'package:evently_vendor/auth/mobile_number/mobile_number.dart';
@@ -22,7 +24,7 @@ class LoginPage extends StatelessWidget {
           return LoginView(
             onContinueWithMobile: () {
               context.read<LoginCubit>().continueWithMobile();
-              Navigator.of(context).push(MobileNumberPage.route());
+              unawaited(Navigator.of(context).push(MobileNumberPage.route()));
             },
             onTermsPressed: () {
               // TODO(developer): Navigate to terms of service
