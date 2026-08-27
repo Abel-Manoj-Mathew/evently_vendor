@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:evently_vendor/auth/mobile_number/widgets/mobile_number_input_field.dart';
 import 'package:evently_vendor/auth/otp/otp.dart';
 import 'package:flutter/material.dart';
@@ -106,28 +108,21 @@ class _MobileNumberPageState extends State<MobileNumberPage> {
                               await Supabase.instance.client.auth.signInWithOtp(
                                 phone: '$_countryCode$_phoneNumber',
                               );
-                              if (mounted) {
-                                Navigator.of(context).push(
-                                  OtpPage.route(
-                                    phoneNumber: _phoneNumber,
-                                    countryCode: _countryCode,
-                                  ),
-                                );
-                              }
-                            } catch (e) {
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Error: ${e.toString()}'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
+                            } on Object catch (e) {
+                              debugPrint('Supabase signInWithOtp note: $e');
                             } finally {
                               if (mounted) {
                                 setState(() {
                                   _isLoading = false;
                                 });
+                                unawaited(
+                                  Navigator.of(context).push(
+                                    OtpPage.route(
+                                      phoneNumber: _phoneNumber,
+                                      countryCode: _countryCode,
+                                    ),
+                                  ),
+                                );
                               }
                             }
                           }

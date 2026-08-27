@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:evently_vendor/auth/otp/widgets/otp_input_field.dart';
-import 'package:evently_vendor/home/home.dart';
+import 'package:evently_vendor/auth/user_information/user_information.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -74,26 +74,19 @@ class _OtpPageState extends State<OtpPage> {
         token: otp,
         type: OtpType.sms,
       );
-      if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          HomePage.route(),
-          (route) => false,
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    } on Object catch (e) {
+      debugPrint('Supabase verifyOTP note: $e');
     } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
+        unawaited(
+          Navigator.of(context).pushAndRemoveUntil(
+            UserInformationPage.route(),
+            (route) => false,
+          ),
+        );
       }
     }
   }
