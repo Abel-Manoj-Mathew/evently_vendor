@@ -11,6 +11,9 @@ dependencies:
   bloc: ^9.2.1
   equatable: ^2.1.0
   firebase_core: ^4.13.0
+  firebase_messaging: ^16.5.0
+  firebase_notifications_client:
+    path: packages/firebase_notifications_client
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.1
@@ -18,15 +21,12 @@ dependencies:
     sdk: flutter
   google_fonts: ^8.2.1
   intl: ^0.20.2
-  firebase_messaging: ^16.5.0
   app_ui:
     path: packages/app_ui
   shared:
     path: packages/shared
   notifications_client:
     path: packages/notifications_client
-  firebase_notifications_client:
-    path: packages/firebase_notifications_client
   notifications_repository:
     path: packages/notifications_repository
 
