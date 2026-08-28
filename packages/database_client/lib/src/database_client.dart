@@ -135,4 +135,45 @@ class DatabaseClient {
     
     return response['id'] as String;
   }
+
+  /// Fetches the current user's vendor profile details.
+  Future<Map<String, dynamic>> getVendorProfileDetails() async {
+    final user = _supabaseClient.auth.currentUser!;
+    
+    // Default fallback values
+    var businessName = user.userMetadata?['business_name'] as String? ?? 'Unknown Business';
+    var location = 'Location not set';
+    var category = 'Category not set';
+    final phone = user.phone ?? 'No phone number';
+    final email = user.email ?? 'No email provided';
+
+    try {
+      final businessResponse = await _supabaseClient
+          .from('businesses')
+          .select('name, location, business_category_selections(name)')
+          .eq('owner_id', user.id)
+          .limit(1)
+          .maybeSingle();
+
+      if (businessResponse != null) {
+        businessName = businessResponse['name'] as String? ?? businessName;
+        location = businessResponse['location'] as String? ?? location;
+        
+        final categoriesList = businessResponse['business_category_selections'] as List<dynamic>?;
+        if (categoriesList != null && categoriesList.isNotEmpty) {
+          category = (categoriesList.first as Map<String, dynamic>)['name'] as String? ?? category;
+        }
+      }
+    } catch (e) {
+      print('DEBUG: Error fetching business profile details: $e');
+    }
+
+    return {
+      'businessName': businessName,
+      'location': location,
+      'category': category,
+      'phone': phone,
+      'email': email,
+    };
+  }
 }

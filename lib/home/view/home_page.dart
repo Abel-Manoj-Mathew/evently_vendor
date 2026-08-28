@@ -1,5 +1,8 @@
+import 'package:business_repository/business_repository.dart';
 import 'package:evently_vendor/booking/create_booking/create_booking.dart';
+import 'package:evently_vendor/profile/profile.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// The primary vendor dashboard home screen for Evently.
@@ -19,33 +22,25 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
 
-  String get _greeting {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
+  String _businessName = 'Loading...';
+  String _category = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
   }
 
-  String get _firstName {
+  Future<void> _loadProfile() async {
     try {
-      final user = Supabase.instance.client.auth.currentUser;
-      final metaName = user?.userMetadata?['first_name'] as String?;
-      if (metaName != null && metaName.trim().isNotEmpty) {
-        return metaName.trim();
+      final profile = await context.read<BusinessRepository>().getVendorProfileDetails();
+      if (mounted) {
+        setState(() {
+          _businessName = profile.businessName;
+          _category = profile.category;
+        });
       }
-    } on Object catch (_) {}
-    return 'Abel';
-  }
-
-  String get _businessName {
-    try {
-      final user = Supabase.instance.client.auth.currentUser;
-      final metaBusiness = user?.userMetadata?['business_name'] as String?;
-      if (metaBusiness != null && metaBusiness.trim().isNotEmpty) {
-        return metaBusiness.trim();
-      }
-    } on Object catch (_) {}
-    return 'Abel Photography';
+    } catch (_) {}
   }
 
   @override
@@ -82,7 +77,7 @@ class _HomePageState extends State<HomePage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '$_greeting, $_firstName',
+                              _businessName,
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
@@ -102,17 +97,17 @@ class _HomePageState extends State<HomePage> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Flexible(
-                                    child: Text(
-                                      _businessName,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF6B7280),
-                                        fontFamily: 'Inter',
+                                      child: Text(
+                                        _category.isEmpty ? 'Loading...' : _category,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF6B7280),
+                                          fontFamily: 'Inter',
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
                                   ),
                                   const SizedBox(width: 4),
                                   const Icon(
@@ -188,7 +183,7 @@ class _HomePageState extends State<HomePage> {
                       const _PlaceholderTab(title: 'Services'),
 
                       // Tab 3: Profile
-                      const _PlaceholderTab(title: 'Profile'),
+                      const ProfilePage(),
                     ],
                   ),
                 ),
