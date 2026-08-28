@@ -1,4 +1,5 @@
 import 'package:evently_vendor/booking/create_booking/create_booking.dart';
+import 'package:evently_vendor/customer/customer_details/view/customer_details_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -68,9 +69,9 @@ void main() {
       );
 
       await tester.tap(find.text('Sarah Johnson'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
-      expect(find.byType(SnackBar), findsOneWidget);
+      expect(find.byType(CustomerDetailsPage), findsOneWidget);
     });
 
     test('route returns MaterialPageRoute', () {

@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:evently_vendor/customer/customer.dart';
 import 'package:flutter/material.dart';
 
 /// Customer data model for booking selection.
@@ -6,11 +9,21 @@ class CustomerItem {
     required this.name,
     required this.phone,
     required this.initials,
+    required this.email,
+    required this.customerSince,
+    required this.bookingsCount,
+    required this.lastEvent,
+    required this.upcomingEvent,
   });
 
   final String name;
   final String phone;
   final String initials;
+  final String email;
+  final String customerSince;
+  final int bookingsCount;
+  final String lastEvent;
+  final String upcomingEvent;
 }
 
 const List<CustomerItem> kRecentCustomers = [
@@ -18,21 +31,41 @@ const List<CustomerItem> kRecentCustomers = [
     name: 'Sarah Johnson',
     phone: '+1 (555) 201-4892',
     initials: 'SJ',
+    email: 'sarah.johnson@email.com',
+    customerSince: 'Mar 2023',
+    bookingsCount: 3,
+    lastEvent: 'Wedding',
+    upcomingEvent: 'None',
   ),
   CustomerItem(
     name: 'Marcus Rivera',
     phone: '+1 (555) 384-7710',
     initials: 'MR',
+    email: 'marcus.rivera@email.com',
+    customerSince: 'Jan 2024',
+    bookingsCount: 2,
+    lastEvent: 'Birthday',
+    upcomingEvent: 'Corporate',
   ),
   CustomerItem(
     name: 'Priya Nair',
     phone: '+1 (555) 609-3345',
     initials: 'PN',
+    email: 'priya.nair@email.com',
+    customerSince: 'Nov 2023',
+    bookingsCount: 5,
+    lastEvent: 'Anniversary',
+    upcomingEvent: 'Wedding',
   ),
   CustomerItem(
     name: 'Tom Okafor',
     phone: '+1 (555) 772-0128',
     initials: 'TO',
+    email: 'tom.okafor@email.com',
+    customerSince: 'Feb 2024',
+    bookingsCount: 1,
+    lastEvent: 'Conference',
+    upcomingEvent: 'None',
   ),
 ];
 
@@ -79,10 +112,9 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
   }
 
   void _onCustomerSelected(CustomerItem customer) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Selected customer: ${customer.name}'),
-        backgroundColor: const Color(0xFFFF4040),
+    unawaited(
+      Navigator.of(context).push(
+        CustomerDetailsPage.route(customer: customer),
       ),
     );
   }
