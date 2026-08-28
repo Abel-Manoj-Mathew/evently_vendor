@@ -119,7 +119,38 @@ class DatabaseClient {
     return getBusinessIdForUser(currentUser.id);
   }
 
-  /// Inserts a new customer record into the database.
+  /// Fetches a customer record by business ID and phone number if one exists.
+  Future<Map<String, dynamic>?> getCustomerByPhone({
+    required String businessId,
+    required String phone,
+  }) async {
+    final response = await _supabaseClient
+        .from('customers')
+        .select()
+        .eq('business_id', businessId)
+        .eq('phone', phone)
+        .order('created_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    if (response != null) return response as Map<String, dynamic>;
+
+    // Digit-only fallback check for matching phone numbers (e.g. "+1 (555) 201-4892" vs "+15552014892")
+    final sanitizedInput = phone.replaceAll(RegExp(r'\D'), '');
+    if (sanitizedInput.isNotEmpty) {
+      final allCustomers = await getCustomers(businessId: businessId);
+      for (final c in allCustomers) {
+        final cPhone = (c['phone'] as String? ?? '').replaceAll(RegExp(r'\D'), '');
+        if (cPhone.isNotEmpty && cPhone == sanitizedInput) {
+          return c;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /// Inserts a new customer record into the database, or returns an existing one if phone already exists.
   Future<Map<String, dynamic>> insertCustomer({
     required String businessId,
     required String name,
@@ -127,6 +158,14 @@ class DatabaseClient {
     String? email,
     String? notes,
   }) async {
+    final existing = await getCustomerByPhone(
+      businessId: businessId,
+      phone: phone,
+    );
+    if (existing != null) {
+      return existing;
+    }
+
     final payload = <String, dynamic>{
       'business_id': businessId,
       'name': name,
@@ -136,13 +175,25 @@ class DatabaseClient {
       'updated_at': DateTime.now().toUtc().toIso8601String(),
     };
 
-    final response = await _supabaseClient
-        .from('customers')
-        .insert(payload)
-        .select()
-        .single();
+    try {
+      final response = await _supabaseClient
+          .from('customers')
+          .insert(payload)
+          .select()
+          .single();
 
-    return response as Map<String, dynamic>;
+      return response as Map<String, dynamic>;
+    } catch (_) {
+      // Fallback check in case of concurrent insert / database unique constraint
+      final existingAfterErr = await getCustomerByPhone(
+        businessId: businessId,
+        phone: phone,
+      );
+      if (existingAfterErr != null) {
+        return existingAfterErr;
+      }
+      rethrow;
+    }
   }
 
   /// Creates a new customer for a given business.
