@@ -100,4 +100,57 @@ class DatabaseClient {
 
     return businessId;
   }
+
+  /// Fetches the business ID for a given user owner ID.
+  Future<String?> getBusinessIdForUser(String ownerId) async {
+    final response = await _supabaseClient
+        .from('businesses')
+        .select('id')
+        .eq('owner_id', ownerId)
+        .maybeSingle();
+
+    return response != null ? response['id'] as String : null;
+  }
+
+  /// Inserts a new customer record into the database.
+  Future<Map<String, dynamic>> insertCustomer({
+    required String businessId,
+    required String name,
+    required String phone,
+    String? email,
+    String? notes,
+  }) async {
+    final payload = <String, dynamic>{
+      'business_id': businessId,
+      'name': name,
+      'phone': phone,
+      'email': email,
+      'notes': notes,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    };
+
+    final response = await _supabaseClient
+        .from('customers')
+        .insert(payload)
+        .select()
+        .single();
+
+    return response as Map<String, dynamic>;
+  }
+
+  /// Fetches all customers for a given business ID.
+  Future<List<Map<String, dynamic>>> getCustomers({
+    required String businessId,
+  }) async {
+    final response = await _supabaseClient
+        .from('customers')
+        .select()
+        .eq('business_id', businessId)
+        .order('created_at', ascending: false);
+
+    return (response as List<dynamic>)
+        .map((row) => row as Map<String, dynamic>)
+        .toList();
+  }
 }
+

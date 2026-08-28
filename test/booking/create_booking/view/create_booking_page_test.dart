@@ -74,9 +74,30 @@ void main() {
       expect(find.byType(CustomerDetailsPage), findsOneWidget);
     });
 
+    testWidgets('tapping + New Customer opens CreateCustomerSheet', (tester) async {
+      tester.view.physicalSize = const Size(375, 812);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: CreateBookingPage(),
+        ),
+      );
+
+      await tester.tap(find.text('+ New Customer'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Add New Customer'), findsOneWidget);
+      expect(find.text('Full Name *'), findsOneWidget);
+      expect(find.text('Phone Number *'), findsOneWidget);
+    });
+
     test('route returns MaterialPageRoute', () {
       final route = CreateBookingPage.route();
       expect(route, isA<MaterialPageRoute<void>>());
     });
   });
 }
+

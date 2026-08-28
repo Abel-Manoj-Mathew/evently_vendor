@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:app_ui/app_ui.dart';
 import 'package:business_repository/business_repository.dart';
+import 'package:customer_repository/customer_repository.dart';
 import 'package:evently_vendor/auth/login/login.dart';
 import 'package:evently_vendor/home/home.dart';
 import 'package:evently_vendor/l10n/l10n.dart';
@@ -16,12 +17,14 @@ class App extends StatelessWidget {
     required this._notificationsRepository,
     required this._userRepository,
     required this._businessRepository,
+    required this._customerRepository,
     super.key,
   });
 
   final NotificationsRepository _notificationsRepository;
   final UserRepository _userRepository;
   final BusinessRepository _businessRepository;
+  final CustomerRepository _customerRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +33,7 @@ class App extends StatelessWidget {
         RepositoryProvider.value(value: _notificationsRepository),
         RepositoryProvider.value(value: _userRepository),
         RepositoryProvider.value(value: _businessRepository),
+        RepositoryProvider.value(value: _customerRepository),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

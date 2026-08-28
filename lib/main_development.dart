@@ -4,10 +4,17 @@ import 'package:evently_vendor/firebase_options_dev.dart';
 
 Future<void> main() async {
   await bootstrap(
-    (notificationsRepository, userRepository, businessRepository) => App(
+    (
+      notificationsRepository,
+      userRepository,
+      businessRepository,
+      customerRepository,
+    ) =>
+        App(
       notificationsRepository: notificationsRepository,
       userRepository: userRepository,
       businessRepository: businessRepository,
+      customerRepository: customerRepository,
     ),
     firebaseOptions: DefaultFirebaseOptions.currentPlatform,
   );
