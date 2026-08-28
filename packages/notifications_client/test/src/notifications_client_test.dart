@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 
 class TestNotificationsClient extends NotificationsClient {
   const TestNotificationsClient();
-  
+
   @override
   Future<String?> fetchToken() async => null;
 

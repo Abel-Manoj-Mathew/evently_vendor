@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
+import 'package:business_repository/business_repository.dart';
+import 'package:database_client/database_client.dart';
 import 'package:evently_vendor/firebase/firebase_messaging_background_handler.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -10,6 +12,7 @@ import 'package:flutter/widgets.dart';
 import 'package:notifications_client/notifications_client.dart';
 import 'package:notifications_repository/notifications_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:user_repository/user_repository.dart';
 
 class AppBlocObserver extends BlocObserver {
   const AppBlocObserver();
@@ -44,6 +47,8 @@ class InMemoryNotificationsClient implements NotificationsClient {
 Future<void> bootstrap(
   FutureOr<Widget> Function(
     NotificationsRepository notificationsRepository,
+    UserRepository userRepository,
+    BusinessRepository businessRepository,
   )
   builder, {
   required FirebaseOptions firebaseOptions,
@@ -58,7 +63,7 @@ Future<void> bootstrap(
 
   await Supabase.initialize(
     url: 'https://qphwywulvgwaqeprifqs.supabase.co',
-    anonKey: 'sb_publishable_92Av1z6wGLFYvbRbyol-sw_Ha9LqRro',
+    publishableKey: 'sb_publishable_92Av1z6wGLFYvbRbyol-sw_Ha9LqRro',
   );
 
   NotificationsRepository notificationsRepository;
@@ -113,5 +118,23 @@ Future<void> bootstrap(
     );
   }
 
-  runApp(await builder(notificationsRepository));
+  final databaseClient = DatabaseClient(
+    supabaseClient: Supabase.instance.client,
+  );
+
+  final userRepository = UserRepository(
+    databaseClient: databaseClient,
+  );
+
+  final businessRepository = BusinessRepository(
+    databaseClient: databaseClient,
+  );
+
+  runApp(
+    await builder(
+      notificationsRepository,
+      userRepository,
+      businessRepository,
+    ),
+  );
 }

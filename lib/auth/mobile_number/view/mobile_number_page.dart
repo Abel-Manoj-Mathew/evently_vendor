@@ -66,7 +66,7 @@ class _MobileNumberPageState extends State<MobileNumberPage> {
               const Padding(
                 padding: EdgeInsets.only(top: 12),
                 child: Text(
-                  'We\'ll send you a verification code to continue.',
+                  "We'll send you a verification code to continue.",
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
@@ -111,7 +111,7 @@ class _MobileNumberPageState extends State<MobileNumberPage> {
                             } on Object catch (e) {
                               debugPrint('Supabase signInWithOtp note: $e');
                             } finally {
-                              if (mounted) {
+                              if (context.mounted) {
                                 setState(() {
                                   _isLoading = false;
                                 });
@@ -127,40 +127,47 @@ class _MobileNumberPageState extends State<MobileNumberPage> {
                             }
                           }
                         : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF4040),
-                      disabledBackgroundColor: const Color(0xFFFF4040).withOpacity(0.5),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                      shadowColor: const Color(0xFFFF4040).withOpacity(0.1),
-                    ).copyWith(
-                      elevation: WidgetStateProperty.resolveWith<double>(
-                        (Set<WidgetState> states) {
-                          if (states.contains(WidgetState.disabled)) return 0;
-                          return 4;
-                        },
-                      ),
-                    ),
-                    child: _isLoading 
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
+                    style:
+                        ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF4040),
+                          disabledBackgroundColor: const Color(
+                            0xFFFF4040,
+                          ).withValues(alpha: 0.5),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        )
-                      : const Text(
-                          'Continue',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            fontFamily: 'Inter',
+                          elevation: 0,
+                          shadowColor: const Color(
+                            0xFFFF4040,
+                          ).withValues(alpha: 0.1),
+                        ).copyWith(
+                          elevation: WidgetStateProperty.resolveWith<double>(
+                            (states) {
+                              if (states.contains(WidgetState.disabled)) {
+                                return 0;
+                              }
+                              return 4;
+                            },
                           ),
                         ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Continue',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Inter',
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -168,7 +175,7 @@ class _MobileNumberPageState extends State<MobileNumberPage> {
                 padding: EdgeInsets.only(top: 16),
                 child: Center(
                   child: Text(
-                    'We\'ll only use this number for verification.',
+                    "We'll only use this number for verification.",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 11,

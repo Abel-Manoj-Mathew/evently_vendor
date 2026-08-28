@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -39,8 +41,9 @@ class _OtpInputFieldState extends State<OtpInputField> {
 
   @override
   void dispose() {
-    _focusNode.removeListener(_onFocusChange);
-    _focusNode.dispose();
+    _focusNode
+      ..removeListener(_onFocusChange)
+      ..dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -56,7 +59,7 @@ class _OtpInputFieldState extends State<OtpInputField> {
         children: [
           // Invisible text field that captures all keyboard input
           Opacity(
-            opacity: 0.0,
+            opacity: 0,
             child: TextField(
               controller: _controller,
               focusNode: _focusNode,
@@ -77,7 +80,7 @@ class _OtpInputFieldState extends State<OtpInputField> {
               showCursor: false,
             ),
           ),
-          
+
           // Visual 6-box representation
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -88,12 +91,12 @@ class _OtpInputFieldState extends State<OtpInputField> {
               final char = hasValue ? text[index] : '';
 
               // Using the HTML mockup's styles
-              Color borderColor = const Color(0xFFE5E7EB);
-              Color bgColor = const Color(0xFFFFFFFF);
-              
+              var borderColor = const Color(0xFFE5E7EB);
+              var bgColor = const Color(0xFFFFFFFF);
+
               if (isCurrentIndex) {
                 borderColor = const Color(0xFFFF4040); // blinking cursor state
-                bgColor = const Color(0xFFFF4040).withOpacity(0.04);
+                bgColor = const Color(0xFFFF4040).withValues(alpha: 0.04);
               } else if (hasValue) {
                 borderColor = const Color(0xFFFF4040); // filled state
                 bgColor = const Color(0xFFFFFFFF);
@@ -101,7 +104,9 @@ class _OtpInputFieldState extends State<OtpInputField> {
 
               return Flexible(
                 child: Container(
-                  margin: EdgeInsets.only(right: index == widget.length - 1 ? 0 : 8),
+                  margin: EdgeInsets.only(
+                    right: index == widget.length - 1 ? 0 : 8,
+                  ),
                   constraints: const BoxConstraints(maxWidth: 52),
                   height: 56,
                   decoration: BoxDecoration(
@@ -141,7 +146,8 @@ class _BlinkingCursor extends StatefulWidget {
   State<_BlinkingCursor> createState() => _BlinkingCursorState();
 }
 
-class _BlinkingCursorState extends State<_BlinkingCursor> with SingleTickerProviderStateMixin {
+class _BlinkingCursorState extends State<_BlinkingCursor>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
   @override
@@ -150,7 +156,8 @@ class _BlinkingCursorState extends State<_BlinkingCursor> with SingleTickerProvi
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
-    )..repeat(reverse: true);
+    );
+    unawaited(_controller.repeat(reverse: true));
   }
 
   @override

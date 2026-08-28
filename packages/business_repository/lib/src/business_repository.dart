@@ -1,0 +1,48 @@
+import 'package:business_repository/src/models/models.dart';
+import 'package:database_client/database_client.dart';
+
+/// {@template business_repository}
+/// A repository that manages business data and categories.
+/// {@endtemplate}
+class BusinessRepository {
+  /// {@macro business_repository}
+  const BusinessRepository({
+    required this._databaseClient,
+  });
+
+  final DatabaseClient _databaseClient;
+
+  /// Fetches all available business categories from the database.
+  Future<List<String>> getCategories() async {
+    try {
+      return await _databaseClient.getCategories();
+    } catch (e) {
+      throw Exception('Failed to fetch categories: $e');
+    }
+  }
+
+  /// Creates a new business and associates its categories.
+  /// Returns the created [Business] domain model.
+  Future<Business> createBusiness({
+    required String ownerId,
+    required String businessName,
+    required List<String> categories,
+  }) async {
+    try {
+      final businessId = await _databaseClient.insertBusiness(
+        ownerId: ownerId,
+        businessName: businessName,
+        categories: categories,
+      );
+
+      return Business(
+        id: businessId,
+        ownerId: ownerId,
+        name: businessName,
+        categories: categories,
+      );
+    } catch (e) {
+      throw Exception('Failed to create business: $e');
+    }
+  }
+}

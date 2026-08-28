@@ -51,7 +51,7 @@ class MobileNumberInputField extends StatelessWidget {
             children: [
               GestureDetector(
                 onTap: () {
-                  // TODO: Implement country picker
+                  // TODO(developer): Implement country picker
                 },
                 child: Container(
                   color: Colors.transparent,
@@ -90,7 +90,10 @@ class MobileNumberInputField extends StatelessWidget {
           ),
         ),
         // Use suffixIcon to clear text when there is input
-        suffixIconConstraints: const BoxConstraints(maxHeight: 40, maxWidth: 40),
+        suffixIconConstraints: const BoxConstraints(
+          maxHeight: 40,
+          maxWidth: 40,
+        ),
         suffixIcon: phoneNumber.isNotEmpty
             ? GestureDetector(
                 onTap: () => onPhoneNumberChanged(''),

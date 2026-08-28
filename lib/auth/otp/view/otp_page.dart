@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:evently_vendor/auth/otp/widgets/otp_input_field.dart';
-import 'package:evently_vendor/auth/user_information/user_information.dart';
+import 'package:evently_vendor/onboarding/user_information/user_information.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -32,7 +32,6 @@ class OtpPage extends StatefulWidget {
 }
 
 class _OtpPageState extends State<OtpPage> {
-  String _otp = '';
   int _secondsRemaining = 30;
   Timer? _timer;
   bool _isLoading = false;
@@ -108,11 +107,11 @@ class _OtpPageState extends State<OtpPage> {
         );
         _startTimer();
       }
-    } catch (e) {
+    } on Object catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text('Error: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -128,12 +127,16 @@ class _OtpPageState extends State<OtpPage> {
 
   @override
   Widget build(BuildContext context) {
-    final minutesStr = (_secondsRemaining / 60).floor().toString().padLeft(2, '0');
+    final minutesStr = (_secondsRemaining / 60).floor().toString().padLeft(
+      2,
+      '0',
+    );
     final secondsStr = (_secondsRemaining % 60).toString().padLeft(2, '0');
 
     // Format the phone number for display (e.g. 98765 43210)
-    final formattedNumber = widget.phoneNumber.length == 10 
-        ? '${widget.phoneNumber.substring(0, 5)} ${widget.phoneNumber.substring(5)}'
+    final formattedNumber = widget.phoneNumber.length == 10
+        ? '${widget.phoneNumber.substring(0, 5)} '
+            '${widget.phoneNumber.substring(5)}'
         : widget.phoneNumber;
 
     return Scaffold(
@@ -177,7 +180,8 @@ class _OtpPageState extends State<OtpPage> {
               const Padding(
                 padding: EdgeInsets.only(top: 8),
                 child: Text(
-                  'Enter the 6-digit verification code sent to your mobile number.',
+                  'Enter the 6-digit verification code sent to '
+                  'your mobile number.',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
@@ -237,14 +241,10 @@ class _OtpPageState extends State<OtpPage> {
                   children: [
                     OtpInputField(
                       length: 6,
-                      onChanged: (val) {
-                        setState(() {
-                          _otp = val;
-                        });
-                      },
+                      onChanged: (val) {},
                       onCompleted: (val) {
                         if (!_isLoading) {
-                          _verifyOtp(val);
+                          unawaited(_verifyOtp(val));
                         }
                       },
                     ),
@@ -291,34 +291,38 @@ class _OtpPageState extends State<OtpPage> {
                           ),
                         ),
                       ] else ...[
-                        _isResending 
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
+                        if (_isResending)
+                          const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFFF4040),
+                              strokeWidth: 2,
+                            ),
+                          )
+                        else
+                          GestureDetector(
+                            onTap: _isResending ? null : _resendOtp,
+                            child: const Text(
+                              'Resend OTP',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
                                 color: Color(0xFFFF4040),
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : GestureDetector(
-                              onTap: _isResending ? null : _resendOtp,
-                              child: const Text(
-                                'Resend OTP',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFFFF4040),
-                                  fontFamily: 'Inter',
-                                ),
+                                fontFamily: 'Inter',
                               ),
                             ),
-                        const SizedBox(height: 38), // maintain similar layout height
+                          ),
+                        const SizedBox(
+                          height: 38,
+                        ), // maintain similar layout height
                       ],
                       const SizedBox(height: 12),
                       const SizedBox(
                         width: 280,
                         child: Text(
-                          'Verification starts automatically after entering all 6 digits.',
+                          'Verification starts automatically after '
+                          'entering all 6 digits.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 12,
