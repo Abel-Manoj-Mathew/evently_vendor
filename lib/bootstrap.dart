@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
 import 'package:business_repository/business_repository.dart';
+import 'package:customer_repository/customer_repository.dart';
 import 'package:database_client/database_client.dart';
 import 'package:evently_vendor/firebase/firebase_messaging_background_handler.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -49,6 +50,7 @@ Future<void> bootstrap(
     NotificationsRepository notificationsRepository,
     UserRepository userRepository,
     BusinessRepository businessRepository,
+    CustomerRepository customerRepository,
   )
   builder, {
   required FirebaseOptions firebaseOptions,
@@ -130,11 +132,17 @@ Future<void> bootstrap(
     databaseClient: databaseClient,
   );
 
+  final customerRepository = CustomerRepository(
+    databaseClient: databaseClient,
+  );
+
   runApp(
     await builder(
       notificationsRepository,
       userRepository,
       businessRepository,
+      customerRepository,
     ),
   );
 }
+

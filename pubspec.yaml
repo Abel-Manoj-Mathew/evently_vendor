@@ -13,6 +13,8 @@ dependencies:
   bloc: ^9.2.1
   business_repository:
     path: packages/business_repository
+  customer_repository:
+    path: packages/customer_repository
   database_client:
     path: packages/database_client
   equatable: ^2.1.0

@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:evently_vendor/booking/create_booking/create_booking.dart';
+import 'package:customer_repository/customer_repository.dart';
 import 'package:evently_vendor/customer/customer.dart';
-import 'package:evently_vendor/customers/create_customer/create_customer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Customer data model for booking selection.
 class CustomerItem {
@@ -89,15 +89,62 @@ class CreateBookingPage extends StatefulWidget {
 class _CreateBookingPageState extends State<CreateBookingPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  late List<CustomerItem> _customers;
 
   @override
   void initState() {
     super.initState();
+    _customers = List<CustomerItem>.from(kRecentCustomers);
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.trim().toLowerCase();
       });
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadCustomersFromDatabase();
+    });
+  }
+
+  Future<void> _loadCustomersFromDatabase() async {
+    try {
+      final customerRepo = context.read<CustomerRepository>();
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser == null) return;
+
+      final businessId =
+          await customerRepo.getBusinessIdForUser(currentUser.id);
+      if (businessId == null) return;
+
+      final dbCustomers =
+          await customerRepo.getCustomers(businessId: businessId);
+      if (dbCustomers.isNotEmpty && mounted) {
+        final mappedItems = dbCustomers.map((c) {
+          return CustomerItem(
+            name: c.name,
+            phone: c.phone,
+            initials: c.initials,
+            email: c.email ?? '',
+            customerSince: 'Recent',
+            bookingsCount: 0,
+            lastEvent: 'None',
+            upcomingEvent: 'None',
+          );
+        }).toList();
+
+        setState(() {
+          _customers = [
+            ...mappedItems,
+            ...kRecentCustomers.where(
+              (demo) => !mappedItems.any(
+                (item) => item.phone == demo.phone,
+              ),
+            ),
+          ];
+        });
+      }
+    } catch (_) {
+      // Ignore background load failures silently if unauthenticated or offline
+    }
   }
 
   @override
@@ -107,8 +154,8 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
   }
 
   List<CustomerItem> get _filteredCustomers {
-    if (_searchQuery.isEmpty) return kRecentCustomers;
-    return kRecentCustomers.where((customer) {
+    if (_searchQuery.isEmpty) return _customers;
+    return _customers.where((customer) {
       return customer.name.toLowerCase().contains(_searchQuery) ||
           customer.phone.toLowerCase().contains(_searchQuery);
     }).toList();
@@ -122,8 +169,19 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
     );
   }
 
-  void _onNewCustomerPressed() {
-    Navigator.of(context).push(CreateCustomerPage.route());
+  Future<void> _onNewCustomerPressed() async {
+    final newCustomer = await CreateCustomerSheet.show(context);
+    if (newCustomer != null && mounted) {
+      setState(() {
+        _customers.insert(0, newCustomer);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Customer ${newCustomer.name} saved successfully!'),
+          backgroundColor: const Color(0xFF10B981),
+        ),
+      );
+    }
   }
 
   @override
