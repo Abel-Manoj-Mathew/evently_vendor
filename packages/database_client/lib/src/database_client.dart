@@ -112,6 +112,13 @@ class DatabaseClient {
     return response != null ? response['id'] as String : null;
   }
 
+  /// Gets the first business ID associated with the current user.
+  Future<String?> getDefaultBusinessId() async {
+    final currentUser = _supabaseClient.auth.currentUser;
+    if (currentUser == null) return null;
+    return getBusinessIdForUser(currentUser.id);
+  }
+
   /// Inserts a new customer record into the database.
   Future<Map<String, dynamic>> insertCustomer({
     required String businessId,
@@ -124,8 +131,8 @@ class DatabaseClient {
       'business_id': businessId,
       'name': name,
       'phone': phone,
-      'email': email,
-      'notes': notes,
+      if (email != null && email.isNotEmpty) 'email': email,
+      if (notes != null && notes.isNotEmpty) 'notes': notes,
       'updated_at': DateTime.now().toUtc().toIso8601String(),
     };
 
@@ -136,6 +143,25 @@ class DatabaseClient {
         .single();
 
     return response as Map<String, dynamic>;
+  }
+
+  /// Creates a new customer for a given business.
+  /// Returns the newly created customer ID.
+  Future<String> createCustomer({
+    required String businessId,
+    required String name,
+    required String phone,
+    String? email,
+    String? notes,
+  }) async {
+    final result = await insertCustomer(
+      businessId: businessId,
+      name: name,
+      phone: phone,
+      email: email,
+      notes: notes,
+    );
+    return result['id'] as String;
   }
 
   /// Fetches all customers for a given business ID.
@@ -153,4 +179,5 @@ class DatabaseClient {
         .toList();
   }
 }
+
 
