@@ -172,6 +172,12 @@ class _CreateCustomerSheetState extends State<CreateCustomerSheet> {
               const SizedBox(height: 6),
               TextFormField(
                 controller: _nameController,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF111827),
+                  fontFamily: 'Inter',
+                ),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) {
                     return 'Customer name is required';
@@ -221,6 +227,12 @@ class _CreateCustomerSheetState extends State<CreateCustomerSheet> {
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF111827),
+                  fontFamily: 'Inter',
+                ),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) {
                     return 'Phone number is required';
@@ -270,6 +282,12 @@ class _CreateCustomerSheetState extends State<CreateCustomerSheet> {
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF111827),
+                  fontFamily: 'Inter',
+                ),
                 decoration: InputDecoration(
                   hintText: 'e.g. sarah.johnson@email.com',
                   hintStyle: const TextStyle(
@@ -313,6 +331,12 @@ class _CreateCustomerSheetState extends State<CreateCustomerSheet> {
               TextFormField(
                 controller: _notesController,
                 maxLines: 2,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF111827),
+                  fontFamily: 'Inter',
+                ),
                 decoration: InputDecoration(
                   hintText: 'Add special preferences or notes...',
                   hintStyle: const TextStyle(
