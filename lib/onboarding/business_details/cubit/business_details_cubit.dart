@@ -41,7 +41,9 @@ class BusinessDetailsCubit extends Cubit<BusinessDetailsState> {
         categories: categories,
       );
       emit(state.copyWith(status: BusinessDetailsStatus.success));
-    } on Object catch (_) {
+    } on Object catch (e, stackTrace) {
+      print('CreateBusiness Error: $e');
+      print(stackTrace);
       emit(state.copyWith(status: BusinessDetailsStatus.failure));
     }
   }

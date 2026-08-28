@@ -24,7 +24,9 @@ class UserInformationCubit extends Cubit<UserInformationState> {
         phone: phone,
       );
       emit(state.copyWith(status: UserInformationStatus.success));
-    } on Object catch (_) {
+    } on Object catch (e, stackTrace) {
+      print('UpdateProfile Error: $e');
+      print(stackTrace);
       emit(state.copyWith(status: UserInformationStatus.failure));
     }
   }

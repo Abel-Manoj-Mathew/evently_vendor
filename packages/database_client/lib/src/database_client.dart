@@ -23,20 +23,32 @@ class DatabaseClient {
         .toList();
   }
 
-  /// Upserts a user's profile information.
   Future<void> upsertProfile({
     required String id,
     String? firstName,
     String? lastName,
     String? phone,
   }) async {
-    await _supabaseClient.from('profiles').upsert({
-      'id': id,
+    final payload = {
       'first_name': firstName,
       'last_name': lastName,
       'phone': phone,
-      'updated_at': DateTime.now().toIso8601String(),
-    });
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    };
+
+    // Explicitly check for existence to avoid upsert RLS policy issues
+    final existing = await _supabaseClient
+        .from('profiles')
+        .select('id')
+        .eq('id', id)
+        .maybeSingle();
+
+    if (existing != null) {
+      await _supabaseClient.from('profiles').update(payload).eq('id', id);
+    } else {
+      payload['id'] = id;
+      await _supabaseClient.from('profiles').insert(payload);
+    }
   }
 
   /// Inserts a new business and its categories.
@@ -52,7 +64,7 @@ class DatabaseClient {
         .insert({
           'owner_id': ownerId,
           'name': businessName,
-          'updated_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
         })
         .select('id')
         .single();
