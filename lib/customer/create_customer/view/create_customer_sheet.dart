@@ -84,7 +84,7 @@ class _CreateCustomerSheetState extends State<CreateCustomerSheet> {
       if (mounted) {
         Navigator.of(context).pop(customerItem);
       }
-    } catch (e) {
+    } on Exception catch (e) {
       if (mounted) {
         setState(() {
           _isSubmitting = false;

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:customer_repository/customer_repository.dart';
 import 'package:evently_vendor/customer/customer.dart';
+import 'package:evently_vendor/customers/create_customer/create_customer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -170,18 +171,7 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
   }
 
   Future<void> _onNewCustomerPressed() async {
-    final newCustomer = await CreateCustomerSheet.show(context);
-    if (newCustomer != null && mounted) {
-      setState(() {
-        _customers.insert(0, newCustomer);
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Customer ${newCustomer.name} saved successfully!'),
-          backgroundColor: const Color(0xFF10B981),
-        ),
-      );
-    }
+    await Navigator.of(context).push(CreateCustomerPage.route());
   }
 
   @override

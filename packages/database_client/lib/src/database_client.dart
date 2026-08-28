@@ -142,7 +142,7 @@ class DatabaseClient {
         .select()
         .single();
 
-    return response as Map<String, dynamic>;
+    return response;
   }
 
   /// Creates a new customer for a given business.

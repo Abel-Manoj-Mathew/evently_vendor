@@ -52,11 +52,12 @@ class _HomePageState extends State<HomePage> {
           children: [
             Column(
               children: [
-                // Top Navigation Bar
-                Container(
-                  padding: const EdgeInsets.only(
-                    top: 16,
-                    bottom: 16,
+                // Top Navigation Bar (Hidden on Profile Tab)
+                if (_currentIndex != 3)
+                  Container(
+                    padding: const EdgeInsets.only(
+                      top: 16,
+                      bottom: 16,
                     left: 20,
                     right: 20,
                   ),
@@ -190,9 +191,10 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
 
-            // Floating Plus Action Button
-            Positioned(
-              bottom: 68,
+            // Floating Plus Action Button (Hidden on Profile Tab)
+            if (_currentIndex != 3)
+              Positioned(
+                bottom: 68,
               left: 0,
               right: 0,
               child: Center(

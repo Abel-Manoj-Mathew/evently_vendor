@@ -1,5 +1,7 @@
 import 'package:business_repository/business_repository.dart';
-import 'package:evently_vendor/profile/profile.dart';
+import 'package:evently_vendor/profile/cubit/profile_cubit.dart';
+import 'package:evently_vendor/profile/cubit/profile_state.dart';
+import 'package:evently_vendor/profile/view/edit_business_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -200,7 +202,9 @@ class ProfileView extends StatelessWidget {
                                 height: 36,
                                 child: OutlinedButton.icon(
                                   onPressed: () {
-                                    // TODO: Edit Business Flow
+                                    Navigator.of(context).push(
+                                      EditBusinessPage.route(),
+                                    );
                                   },
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: const Color(0xFFFF4040),
