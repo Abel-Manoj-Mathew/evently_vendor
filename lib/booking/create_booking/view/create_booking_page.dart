@@ -109,23 +109,33 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
   Future<void> _loadCustomersFromDatabase() async {
     try {
       final customerRepo = context.read<CustomerRepository>();
-      final currentUser = Supabase.instance.client.auth.currentUser;
-      if (currentUser == null) return;
+      
+      User? currentUser;
+      try {
+        currentUser = Supabase.instance.client.auth.currentUser;
+      } catch (_) {}
 
-      final businessId =
-          await customerRepo.getBusinessIdForUser(currentUser.id);
-      if (businessId == null) return;
+      String? businessId;
+      if (currentUser != null) {
+        try {
+          businessId =
+              await customerRepo.getBusinessIdForUser(currentUser.id);
+        } catch (_) {}
+      }
+      businessId ??= '00000000-0000-0000-0000-000000000000';
 
       final dbCustomers =
           await customerRepo.getCustomers(businessId: businessId);
-      if (dbCustomers.isNotEmpty && mounted) {
+      if (mounted && dbCustomers.isNotEmpty) {
         final mappedItems = dbCustomers.map((c) {
           return CustomerItem(
             name: c.name,
             phone: c.phone,
             initials: c.initials,
             email: c.email ?? '',
-            customerSince: 'Recent',
+            customerSince: c.createdAt != null
+                ? _formatCustomerSince(c.createdAt!)
+                : 'Recent',
             bookingsCount: 0,
             lastEvent: 'None',
             upcomingEvent: 'None',
@@ -133,19 +143,30 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
         }).toList();
 
         setState(() {
-          _customers = [
-            ...mappedItems,
-            ...kRecentCustomers.where(
-              (demo) => !mappedItems.any(
-                (item) => item.phone == demo.phone,
-              ),
-            ),
-          ];
+          _customers = mappedItems;
         });
       }
     } catch (_) {
       // Ignore background load failures silently if unauthenticated or offline
     }
+  }
+
+  static String _formatCustomerSince(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[date.month - 1]} ${date.year}';
   }
 
   @override
@@ -171,7 +192,27 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
   }
 
   Future<void> _onNewCustomerPressed() async {
-    await Navigator.of(context).push(CreateCustomerPage.route());
+    final newCustomer = await CreateCustomerSheet.show(context);
+    if (newCustomer != null && mounted) {
+      final existingIndex =
+          _customers.indexWhere((c) => c.phone == newCustomer.phone);
+      setState(() {
+        if (existingIndex != -1) {
+          _customers[existingIndex] = newCustomer;
+        } else {
+          _customers.insert(0, newCustomer);
+        }
+      });
+      final message = existingIndex != -1
+          ? 'Customer with this mobile number already exists: ${newCustomer.name}'
+          : 'Customer ${newCustomer.name} saved successfully!';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: const Color(0xFF10B981),
+        ),
+      );
+    }
   }
 
   @override

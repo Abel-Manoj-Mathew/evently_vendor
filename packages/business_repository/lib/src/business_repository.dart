@@ -55,7 +55,7 @@ class BusinessRepository {
     }
   }
 
-  /// Creates a new customer for a given business.
+  /// Creates a new customer for a given business (or returns existing ID if phone already registered).
   Future<String> createCustomer({
     required String businessId,
     required String name,
@@ -64,6 +64,14 @@ class BusinessRepository {
     String? notes,
   }) async {
     try {
+      final existing = await _databaseClient.getCustomerByPhone(
+        businessId: businessId,
+        phone: phone,
+      );
+      if (existing != null) {
+        return existing['id'] as String;
+      }
+
       return await _databaseClient.createCustomer(
         businessId: businessId,
         name: name,

@@ -30,6 +30,14 @@ class CustomerRepository {
     String? notes,
   }) async {
     try {
+      final existing = await _databaseClient.getCustomerByPhone(
+        businessId: businessId,
+        phone: phone,
+      );
+      if (existing != null) {
+        return Customer.fromJson(existing);
+      }
+
       final data = await _databaseClient.insertCustomer(
         businessId: businessId,
         name: name,
@@ -40,6 +48,22 @@ class CustomerRepository {
       return Customer.fromJson(data);
     } catch (e) {
       throw Exception('Failed to create customer: $e');
+    }
+  }
+
+  /// Fetches a customer by business ID and phone number if registered.
+  Future<Customer?> getCustomerByPhone({
+    required String businessId,
+    required String phone,
+  }) async {
+    try {
+      final data = await _databaseClient.getCustomerByPhone(
+        businessId: businessId,
+        phone: phone,
+      );
+      return data != null ? Customer.fromJson(data) : null;
+    } catch (e) {
+      throw Exception('Failed to fetch customer by phone: $e');
     }
   }
 

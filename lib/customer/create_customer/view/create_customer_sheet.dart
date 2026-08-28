@@ -48,11 +48,16 @@ class _CreateCustomerSheetState extends State<CreateCustomerSheet> {
 
     try {
       final customerRepository = context.read<CustomerRepository>();
-      final currentUser = Supabase.instance.client.auth.currentUser;
+      User? currentUser;
+      try {
+        currentUser = Supabase.instance.client.auth.currentUser;
+      } catch (_) {}
 
       String? businessId;
       if (currentUser != null) {
-        businessId = await customerRepository.getBusinessIdForUser(currentUser.id);
+        try {
+          businessId = await customerRepository.getBusinessIdForUser(currentUser.id);
+        } catch (_) {}
       }
 
       // Fallback business ID if not authenticated or no business record yet

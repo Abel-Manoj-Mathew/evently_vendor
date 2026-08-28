@@ -42,6 +42,13 @@ void main() {
         };
 
         when(
+          () => databaseClient.getCustomerByPhone(
+            businessId: any(named: 'businessId'),
+            phone: any(named: 'phone'),
+          ),
+        ).thenAnswer((_) async => null);
+
+        when(
           () => databaseClient.insertCustomer(
             businessId: businessId,
             name: name,
@@ -64,7 +71,48 @@ void main() {
         expect(result.initials, equals('AS'));
       });
 
+      test('returns existing customer when mobile number already registered', () async {
+        const businessId = 'b123';
+        const phone = '+15551234567';
+        final rawJson = {
+          'id': 'cExisting',
+          'business_id': businessId,
+          'name': 'Existing Customer',
+          'phone': phone,
+        };
+
+        when(
+          () => databaseClient.getCustomerByPhone(
+            businessId: businessId,
+            phone: phone,
+          ),
+        ).thenAnswer((_) async => rawJson);
+
+        final result = await customerRepository.createCustomer(
+          businessId: businessId,
+          name: 'New Name',
+          phone: phone,
+        );
+
+        expect(result.id, equals('cExisting'));
+        expect(result.name, equals('Existing Customer'));
+        verifyNever(
+          () => databaseClient.insertCustomer(
+            businessId: any(named: 'businessId'),
+            name: any(named: 'name'),
+            phone: any(named: 'phone'),
+          ),
+        );
+      });
+
       test('throws Exception when database operation fails', () async {
+        when(
+          () => databaseClient.getCustomerByPhone(
+            businessId: any(named: 'businessId'),
+            phone: any(named: 'phone'),
+          ),
+        ).thenAnswer((_) async => null);
+
         when(
           () => databaseClient.insertCustomer(
             businessId: any(named: 'businessId'),
