@@ -11,6 +11,14 @@ class UserRepository {
 
   final DatabaseClient _databaseClient;
 
+  Future<bool> profileExists(String id) async {
+    try {
+      return await _databaseClient.profileExists(id);
+    } catch (e) {
+      throw Exception('Failed to check profile existence: $e');
+    }
+  }
+
   /// Updates or inserts the user's profile information in the database.
   Future<void> updateProfile({
     required String id,

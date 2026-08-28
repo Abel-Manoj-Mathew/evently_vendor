@@ -80,12 +80,7 @@ class _OtpPageState extends State<OtpPage> {
         setState(() {
           _isLoading = false;
         });
-        unawaited(
-          Navigator.of(context).pushAndRemoveUntil(
-            UserInformationPage.route(),
-            (route) => false,
-          ),
-        );
+        Navigator.of(context).popUntil((route) => route.isFirst);
       }
     }
   }

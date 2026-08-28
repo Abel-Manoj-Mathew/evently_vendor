@@ -23,6 +23,17 @@ class DatabaseClient {
         .toList();
   }
 
+  Future<bool> profileExists(String id) async {
+    print('DEBUG: Checking if profile exists for ID: $id');
+    final existing = await _supabaseClient
+        .from('profiles')
+        .select('id')
+        .eq('id', id)
+        .maybeSingle();
+    print('DEBUG: Profile check result: $existing');
+    return existing != null;
+  }
+
   Future<void> upsertProfile({
     required String id,
     String? firstName,
