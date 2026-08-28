@@ -83,4 +83,20 @@ class BusinessRepository {
       throw Exception('Failed to create customer: $e');
     }
   }
+
+  /// Fetches the vendor profile details (Business and Account data).
+  Future<VendorProfile> getVendorProfileDetails() async {
+    try {
+      final data = await _databaseClient.getVendorProfileDetails();
+      return VendorProfile(
+        businessName: data['businessName'] as String,
+        location: data['location'] as String,
+        category: data['category'] as String,
+        phone: data['phone'] as String,
+        email: data['email'] as String,
+      );
+    } catch (e) {
+      throw Exception('Failed to fetch vendor profile: $e');
+    }
+  }
 }
