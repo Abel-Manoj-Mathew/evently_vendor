@@ -45,4 +45,34 @@ class BusinessRepository {
       throw Exception('Failed to create business: $e');
     }
   }
+
+  /// Gets the first business ID associated with the current user.
+  Future<String?> getDefaultBusinessId() async {
+    try {
+      return await _databaseClient.getDefaultBusinessId();
+    } catch (e) {
+      throw Exception('Failed to fetch default business ID: $e');
+    }
+  }
+
+  /// Creates a new customer for a given business.
+  Future<String> createCustomer({
+    required String businessId,
+    required String name,
+    required String phone,
+    String? email,
+    String? notes,
+  }) async {
+    try {
+      return await _databaseClient.createCustomer(
+        businessId: businessId,
+        name: name,
+        phone: phone,
+        email: email,
+        notes: notes,
+      );
+    } catch (e) {
+      throw Exception('Failed to create customer: $e');
+    }
+  }
 }

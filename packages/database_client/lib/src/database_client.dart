@@ -100,4 +100,39 @@ class DatabaseClient {
 
     return businessId;
   }
+
+  /// Gets the first business ID associated with the current user.
+  Future<String?> getDefaultBusinessId() async {
+    final response = await _supabaseClient
+        .from('businesses')
+        .select('id')
+        .eq('owner_id', _supabaseClient.auth.currentUser!.id)
+        .limit(1)
+        .maybeSingle();
+    return response != null ? response['id'] as String : null;
+  }
+
+  /// Creates a new customer for a given business.
+  /// Returns the newly created customer ID.
+  Future<String> createCustomer({
+    required String businessId,
+    required String name,
+    required String phone,
+    String? email,
+    String? notes,
+  }) async {
+    final response = await _supabaseClient
+        .from('customers')
+        .insert({
+          'business_id': businessId,
+          'name': name,
+          'phone': phone,
+          if (email != null && email.isNotEmpty) 'email': email,
+          if (notes != null && notes.isNotEmpty) 'notes': notes,
+        })
+        .select('id')
+        .single();
+    
+    return response['id'] as String;
+  }
 }

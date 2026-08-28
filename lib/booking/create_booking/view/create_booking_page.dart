@@ -1,7 +1,10 @@
 import 'dart:async';
 
+import 'package:evently_vendor/booking/create_booking/create_booking.dart';
 import 'package:evently_vendor/customer/customer.dart';
+import 'package:evently_vendor/customers/create_customer/create_customer.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Customer data model for booking selection.
 class CustomerItem {
@@ -120,12 +123,7 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
   }
 
   void _onNewCustomerPressed() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('New Customer creation flow'),
-        backgroundColor: Color(0xFFFF4040),
-      ),
-    );
+    Navigator.of(context).push(CreateCustomerPage.route());
   }
 
   @override
