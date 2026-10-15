@@ -1,54 +1,103 @@
+import 'package:authentication_client/authentication_client.dart';
+import 'package:evently_vendor/app/app.dart';
 import 'package:evently_vendor/auth/mobile_number/view/mobile_number_page.dart';
 import 'package:evently_vendor/auth/mobile_number/widgets/mobile_number_input_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mocktail/mocktail.dart';
+
+import '../../../helpers/helpers.dart';
 
 void main() {
-  group('MobileNumberPage', () {
-    testWidgets('renders MobileNumberPage', (tester) async {
-      tester.view.physicalSize = const Size(375, 812);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+  late AuthenticationClient client;
 
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: MobileNumberPage(),
+  setUp(() => client = MockAuthenticationClient());
+
+  /// Hosts the page in a router so navigation to OTP is observable.
+  GoRouter router() {
+    return GoRouter(
+      initialLocation: AppRoutes.phoneNumber,
+      routes: [
+        GoRoute(
+          path: AppRoutes.phoneNumber,
+          builder: (_, _) => const MobileNumberPage(),
         ),
-      );
-
-      expect(find.text('Enter your mobile number'), findsOneWidget);
-      expect(find.byType(MobileNumberInputField), findsOneWidget);
-      expect(find.byType(ElevatedButton), findsOneWidget);
-      expect(find.text('Continue'), findsOneWidget);
-    });
-
-    testWidgets('entering phone number enables Continue button', (
-      tester,
-    ) async {
-      tester.view.physicalSize = const Size(375, 812);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: MobileNumberPage(),
+        GoRoute(
+          path: AppRoutes.verifyOtp,
+          builder: (_, state) => Text('OTP for ${state.extra}'),
         ),
-      );
+      ],
+    );
+  }
 
-      // Button is initially disabled
-      final buttonFinder = find.byType(ElevatedButton);
-      var button = tester.widget<ElevatedButton>(buttonFinder);
-      expect(button.onPressed, isNull);
+  testWidgets('renders and enables Continue for a valid number', (
+    tester,
+  ) async {
+    await tester.pumpApp(
+      const MobileNumberPage(),
+      authenticationClient: client,
+    );
 
-      // Enter 10-digit phone number
-      await tester.enterText(find.byType(TextField), '9876543210');
-      await tester.pump();
+    expect(find.text('Enter your mobile number'), findsOneWidget);
+    expect(find.byType(MobileNumberInputField), findsOneWidget);
+    final button = find.byType(ElevatedButton);
+    expect(tester.widget<ElevatedButton>(button).onPressed, isNull);
 
-      // Button is now enabled
-      button = tester.widget<ElevatedButton>(buttonFinder);
-      expect(button.onPressed, isNotNull);
-    });
+    await tester.enterText(find.byType(TextField), '9876543210');
+    await tester.pump();
+    expect(tester.widget<ElevatedButton>(button).onPressed, isNotNull);
+  });
+
+  testWidgets('explains an invalid full-length number', (tester) async {
+    await tester.pumpApp(
+      const MobileNumberPage(),
+      authenticationClient: client,
+    );
+    await tester.enterText(find.byType(TextField), '1234567890');
+    await tester.pump();
+    expect(
+      find.text('Enter a valid 10-digit Indian mobile number.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('navigates to OTP verification after the code is sent', (
+    tester,
+  ) async {
+    when(
+      () => client.sendOtp(phoneNumber: '+919876543210'),
+    ).thenAnswer((_) async {});
+    await tester.pumpRouterApp(router(), authenticationClient: client);
+
+    await tester.enterText(find.byType(TextField), '9876543210');
+    await tester.pump();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('OTP for +919876543210'), findsOneWidget);
+  });
+
+  testWidgets('stays on the page and shows an error when sending fails', (
+    tester,
+  ) async {
+    when(
+      () => client.sendOtp(phoneNumber: any(named: 'phoneNumber')),
+    ).thenThrow(const SendOtpFailure(AuthFailureReason.network, 'offline'));
+    await tester.pumpRouterApp(router(), authenticationClient: client);
+
+    await tester.enterText(find.byType(TextField), '9876543210');
+    await tester.pump();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('OTP for'), findsNothing);
+    expect(find.text('Enter your mobile number'), findsOneWidget);
+    expect(
+      find.text(
+        "Couldn't connect. Check your internet connection and try again.",
+      ),
+      findsOneWidget,
+    );
   });
 }

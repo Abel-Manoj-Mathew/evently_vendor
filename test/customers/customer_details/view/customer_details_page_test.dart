@@ -1,57 +1,62 @@
-import 'package:evently_vendor/booking/create_booking/view/create_booking_page.dart';
-import 'package:evently_vendor/customer/customer_details/customer_details.dart';
-import 'package:flutter/material.dart';
+import 'package:customer_repository/customer_repository.dart';
+import 'package:evently_vendor/customers/customers.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
+import '../../../helpers/helpers.dart';
 
 void main() {
-  group('CustomerDetailsPage', () {
-    testWidgets('renders customer profile information correctly',
-        (tester) async {
-      tester.view.physicalSize = const Size(375, 900);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+  late CustomerRepository customerRepository;
 
-      const customer = CustomerItem(
-        name: 'Sarah Johnson',
-        phone: '+1 (555) 201-4892',
-        initials: 'SJ',
-        email: 'sarah.johnson@email.com',
-        customerSince: 'Mar 2023',
-        bookingsCount: 3,
-        lastEvent: 'Wedding',
-        upcomingEvent: 'None',
-      );
+  setUp(() => customerRepository = MockCustomerRepository());
 
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: CustomerDetailsPage(customer: customer),
-        ),
-      );
+  Future<void> pumpPage(WidgetTester tester) async {
+    await tester.pumpApp(
+      const CustomerDetailsPage(customerId: 'c1'),
+      customerRepository: customerRepository,
+    );
+    await tester.pumpAndSettle();
+  }
 
-      expect(find.text('Sarah Johnson'), findsNWidgets(2));
-      expect(find.text('Customer since Mar 2023'), findsOneWidget);
-      expect(find.text('+1 (555) 201-4892'), findsOneWidget);
-      expect(find.text('sarah.johnson@email.com'), findsOneWidget);
-      expect(find.text('3'), findsOneWidget);
-      expect(find.text('Bookings'), findsOneWidget);
-      expect(find.text('Last Event'), findsOneWidget);
-      expect(find.text('Wedding'), findsNWidgets(2));
-      expect(find.text('Upcoming'), findsOneWidget);
-      expect(find.text('None'), findsOneWidget);
-      expect(find.text('+ New Booking'), findsOneWidget);
-      expect(find.text('Edit Customer'), findsOneWidget);
-      expect(find.text('Call'), findsOneWidget);
-      expect(find.text('Message'), findsOneWidget);
-      expect(find.text('Event History'), findsOneWidget);
-      expect(find.text('Amara & James Wedding'), findsOneWidget);
-      expect(find.text('Rivera Birthday Party'), findsOneWidget);
-      expect(find.text('Johnson Corporate Event'), findsOneWidget);
-    });
+  testWidgets('renders the stored customer', (tester) async {
+    when(() => customerRepository.getCustomer('c1')).thenAnswer(
+      (_) async => Customer(
+        id: 'c1',
+        businessId: 'b1',
+        name: 'Anu Thomas',
+        phone: '+919876543210',
+        notes: 'Prefers WhatsApp',
+        createdAt: DateTime.utc(2026, 3, 5),
+      ),
+    );
+    await pumpPage(tester);
 
-    test('route returns MaterialPageRoute', () {
-      final route = CustomerDetailsPage.route();
-      expect(route, isA<MaterialPageRoute<void>>());
-    });
+    expect(find.text('Anu Thomas'), findsNWidgets(2));
+    expect(find.text('AT'), findsOneWidget);
+    expect(find.text('Customer since Mar 5, 2026'), findsOneWidget);
+    expect(find.text('+919876543210'), findsOneWidget);
+    expect(find.text('Not provided'), findsOneWidget);
+    expect(find.text('Prefers WhatsApp'), findsOneWidget);
+    expect(find.textContaining('once booking management'), findsOneWidget);
+    // No fabricated statistics or event history.
+    expect(find.text('Amara & James Wedding'), findsNothing);
+    expect(find.text('Last Event'), findsNothing);
+  });
+
+  testWidgets('handles a missing or inaccessible customer', (tester) async {
+    when(
+      () => customerRepository.getCustomer('c1'),
+    ).thenAnswer((_) async => null);
+    await pumpPage(tester);
+    expect(find.text('Customer not found'), findsOneWidget);
+  });
+
+  testWidgets('offers retry when loading fails', (tester) async {
+    when(
+      () => customerRepository.getCustomer('c1'),
+    ).thenThrow(Exception('offline'));
+    await pumpPage(tester);
+    expect(find.text("Couldn't load this customer"), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
   });
 }

@@ -1,11 +1,10 @@
 import 'package:business_repository/business_repository.dart';
 import 'package:evently_vendor/onboarding/business_details/business_details.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockBusinessRepository extends Mock implements BusinessRepository {}
+import '../../../helpers/helpers.dart';
 
 void main() {
   late MockBusinessRepository businessRepository;
@@ -27,18 +26,9 @@ void main() {
 
   group('BusinessDetailsPage', () {
     testWidgets('renders all widgets correctly', (tester) async {
-      tester.view.physicalSize = const Size(375, 812);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      await tester.pumpWidget(
-        RepositoryProvider<BusinessRepository>.value(
-          value: businessRepository,
-          child: const MaterialApp(
-            home: BusinessDetailsPage(),
-          ),
-        ),
+      await tester.pumpApp(
+        BusinessDetailsPage(onBack: () {}, onSaved: () {}),
+        businessRepository: businessRepository,
       );
       await tester.pumpAndSettle();
 
@@ -72,18 +62,9 @@ void main() {
       'filling business name with category selected '
       'enables Create Business button',
       (tester) async {
-        tester.view.physicalSize = const Size(375, 812);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-
-        await tester.pumpWidget(
-          RepositoryProvider<BusinessRepository>.value(
-            value: businessRepository,
-            child: const MaterialApp(
-              home: BusinessDetailsPage(),
-            ),
-          ),
+        await tester.pumpApp(
+          BusinessDetailsPage(onBack: () {}, onSaved: () {}),
+          businessRepository: businessRepository,
         );
         await tester.pumpAndSettle();
 
@@ -107,18 +88,9 @@ void main() {
     testWidgets('toggling View All Categories expands category chips', (
       tester,
     ) async {
-      tester.view.physicalSize = const Size(375, 812);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      await tester.pumpWidget(
-        RepositoryProvider<BusinessRepository>.value(
-          value: businessRepository,
-          child: const MaterialApp(
-            home: BusinessDetailsPage(),
-          ),
-        ),
+      await tester.pumpApp(
+        BusinessDetailsPage(onBack: () {}, onSaved: () {}),
+        businessRepository: businessRepository,
       );
       await tester.pumpAndSettle();
 
@@ -131,9 +103,72 @@ void main() {
       expect(find.text('Venue Provider'), findsOneWidget);
     });
 
-    test('route returns MaterialPageRoute', () {
-      final route = BusinessDetailsPage.route();
-      expect(route, isA<MaterialPageRoute<void>>());
+    testWidgets('creates the business for the signed-in user', (
+      tester,
+    ) async {
+      when(
+        () => businessRepository.createBusiness(
+          ownerId: any(named: 'ownerId'),
+          businessName: any(named: 'businessName'),
+          categories: any(named: 'categories'),
+        ),
+      ).thenAnswer(
+        (_) async => const Business(
+          id: 'b1',
+          ownerId: 'user-1',
+          name: 'Abel Photography',
+        ),
+      );
+      var saved = false;
+      await tester.pumpApp(
+        BusinessDetailsPage(onBack: () {}, onSaved: () => saved = true),
+        businessRepository: businessRepository,
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'e.g. Abel Photography'),
+        'Abel Photography',
+      );
+      await tester.pump();
+      final button = find.widgetWithText(ElevatedButton, 'Create Business');
+      await tester.ensureVisible(button);
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+
+      verify(
+        () => businessRepository.createBusiness(
+          ownerId: testUser.id,
+          businessName: 'Abel Photography',
+          categories: ['Photographer'],
+        ),
+      ).called(1);
+      expect(saved, isTrue);
+    });
+
+    testWidgets('offers retry when categories cannot be loaded', (
+      tester,
+    ) async {
+      when(
+        () => businessRepository.getCategories(),
+      ).thenThrow(Exception('offline'));
+      await tester.pumpApp(
+        BusinessDetailsPage(onBack: () {}, onSaved: () {}),
+        businessRepository: businessRepository,
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          "Couldn't load business categories. Check your connection.",
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Failed to create business. Please try again.'),
+        findsNothing,
+      );
+      expect(find.text('Retry'), findsOneWidget);
     });
   });
 }

@@ -1,70 +1,110 @@
+import 'package:business_repository/business_repository.dart';
+import 'package:evently_vendor/app/app.dart';
 import 'package:evently_vendor/home/home.dart';
+import 'package:evently_vendor/profile/profile.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mocktail/mocktail.dart';
+
+import '../../helpers/helpers.dart';
+
+const _profile = VendorProfile(
+  businessName: 'Lens & Light Studio',
+  category: 'Photographer',
+  location: 'Trivandrum',
+  phone: '+919876543210',
+  email: 'No email provided',
+);
 
 void main() {
-  group('HomePage', () {
-    testWidgets('renders top bar, schedule, bookings, workspace and bottom nav',
-        (tester) async {
-      tester.view.physicalSize = const Size(375, 812);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+  late ProfileCubit profileCubit;
 
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: HomePage(),
+  setUp(() {
+    profileCubit = MockProfileCubit();
+    when(() => profileCubit.state).thenReturn(
+      const ProfileState(status: ProfileStatus.success, profile: _profile),
+    );
+  });
+
+  // HomePage reads the ProfileCubit that AppShell provides for the whole
+  // shell; the original tests failed because nothing provided it.
+  Widget withProfile(Widget child) =>
+      BlocProvider.value(value: profileCubit, child: child);
+
+  testWidgets('renders business header, booking sections and checklist', (
+    tester,
+  ) async {
+    await tester.pumpApp(withProfile(const HomePage()));
+
+    expect(find.text('Lens & Light Studio'), findsOneWidget);
+    expect(find.text('Photographer'), findsOneWidget);
+    expect(find.text("Today's Schedule"), findsOneWidget);
+    expect(find.text('Upcoming Bookings'), findsOneWidget);
+    expect(find.text('Bookings are coming soon'), findsNWidgets(2));
+    expect(find.text('Complete Your Workspace'), findsOneWidget);
+    expect(find.text('Business Created'), findsOneWidget);
+    expect(find.text('Add Your First Service'), findsOneWidget);
+    expect(find.text('Upload Business Logo'), findsOneWidget);
+    expect(find.text('Add Business Location'), findsOneWidget);
+    expect(find.text('New Booking'), findsOneWidget);
+  });
+
+  testWidgets('does not show a fabricated progress percentage', (
+    tester,
+  ) async {
+    await tester.pumpApp(withProfile(const HomePage()));
+    expect(find.textContaining('%'), findsNothing);
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+  });
+
+  testWidgets('hides the notification badge when nothing is unread', (
+    tester,
+  ) async {
+    await tester.pumpApp(withProfile(const HomePage()));
+    final badge = tester.widget<Badge>(find.byType(Badge));
+    expect(badge.isLabelVisible, isFalse);
+  });
+
+  testWidgets('shows a fallback title when the profile fails to load', (
+    tester,
+  ) async {
+    when(
+      () => profileCubit.state,
+    ).thenReturn(const ProfileState(status: ProfileStatus.failure));
+    await tester.pumpApp(withProfile(const HomePage()));
+    expect(find.text("Couldn't load business details"), findsOneWidget);
+  });
+
+  testWidgets('New Booking and the bell open their screens', (tester) async {
+    final router = GoRouter(
+      initialLocation: AppRoutes.home,
+      routes: [
+        GoRoute(
+          path: AppRoutes.home,
+          builder: (_, _) => withProfile(const HomePage()),
         ),
-      );
-
-      expect(find.text("Today's Schedule"), findsOneWidget);
-      expect(find.text('No events scheduled today.'), findsOneWidget);
-      expect(find.text('Upcoming Bookings'), findsOneWidget);
-      expect(find.text('No upcoming bookings.'), findsOneWidget);
-      expect(find.text('View All'), findsOneWidget);
-      expect(find.text('Complete Your Workspace'), findsOneWidget);
-      expect(find.text('25%'), findsOneWidget);
-      expect(find.text('Business Created'), findsOneWidget);
-      expect(find.text('Add Your First Service'), findsOneWidget);
-      expect(find.text('Upload Business Logo'), findsOneWidget);
-      expect(find.text('Add Business Location'), findsOneWidget);
-      expect(find.text('Home'), findsOneWidget);
-      expect(find.text('Calendar'), findsOneWidget);
-      expect(find.text('Services'), findsOneWidget);
-      expect(find.text('Profile'), findsOneWidget);
-    });
-
-    testWidgets('tapping navigation items switches tabs', (tester) async {
-      tester.view.physicalSize = const Size(375, 812);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: HomePage(),
+        GoRoute(
+          path: AppRoutes.newBooking,
+          builder: (_, _) => const Text('new booking'),
         ),
-      );
+        GoRoute(
+          path: AppRoutes.notifications,
+          builder: (_, _) => const Text('notifications'),
+        ),
+      ],
+    );
+    await tester.pumpRouterApp(router);
 
-      await tester.tap(find.text('Calendar'));
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('New Booking'));
+    await tester.pumpAndSettle();
+    expect(find.text('new booking'), findsOneWidget);
 
-      expect(find.text('Calendar Screen'), findsOneWidget);
-
-      await tester.tap(find.text('Services'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Services Screen'), findsOneWidget);
-
-      await tester.tap(find.text('Profile'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Profile Screen'), findsOneWidget);
-    });
-
-    test('route returns MaterialPageRoute', () {
-      final route = HomePage.route();
-      expect(route, isA<MaterialPageRoute<void>>());
-    });
+    router.pop();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Notifications'));
+    await tester.pumpAndSettle();
+    expect(find.text('notifications'), findsOneWidget);
   });
 }

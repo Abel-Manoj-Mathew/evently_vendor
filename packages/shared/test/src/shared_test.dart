@@ -3,12 +3,6 @@ import 'package:shared/shared.dart';
 
 void main() {
   group('Shared Utilities & Extensions', () {
-    test('AppFlavor provides correct values', () {
-      expect(AppFlavor.development, isNotNull);
-      expect(AppFlavor.staging, isNotNull);
-      expect(AppFlavor.production, isNotNull);
-    });
-
     test('StringX capitalizes text correctly', () {
       expect('evently'.capitalize(), equals('Evently'));
       expect(

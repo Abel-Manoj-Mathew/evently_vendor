@@ -10,13 +10,18 @@ environment:
 dependencies:
   app_ui:
     path: packages/app_ui
+  authentication_client:
+    path: packages/authentication_client
   bloc: ^9.2.1
+  bloc_concurrency: ^0.3.0
   business_repository:
     path: packages/business_repository
   customer_repository:
     path: packages/customer_repository
   database_client:
     path: packages/database_client
+  env:
+    path: packages/env
   equatable: ^2.1.0
   firebase_core: ^4.13.0
   firebase_messaging: ^16.5.0
@@ -27,6 +32,7 @@ dependencies:
   flutter_bloc: ^9.1.1
   flutter_localizations:
     sdk: flutter
+  go_router: ^18.0.2
   google_fonts: ^8.2.1
   intl: ^0.20.2
   notifications_client:

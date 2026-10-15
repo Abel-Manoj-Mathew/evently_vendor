@@ -5,13 +5,16 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:user_repository/user_repository.dart';
 
 class UserInformationPage extends StatelessWidget {
-  const UserInformationPage({super.key});
+  const UserInformationPage({
+    required this.onBack,
+    required this.onSaved,
+    this.backTooltip = 'Back',
+    super.key,
+  });
 
-  static Route<void> route() {
-    return MaterialPageRoute<void>(
-      builder: (_) => const UserInformationPage(),
-    );
-  }
+  final VoidCallback onBack;
+  final VoidCallback onSaved;
+  final String backTooltip;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +22,11 @@ class UserInformationPage extends StatelessWidget {
       create: (context) => UserInformationCubit(
         userRepository: context.read<UserRepository>(),
       ),
-      child: const UserInformationView(),
+      child: UserInformationView(
+        onBack: onBack,
+        onSaved: onSaved,
+        backTooltip: backTooltip,
+      ),
     );
   }
 }

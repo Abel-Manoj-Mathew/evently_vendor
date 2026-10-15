@@ -8,9 +8,18 @@ class OtpInputField extends StatefulWidget {
     required this.length,
     required this.onChanged,
     required this.onCompleted,
+    this.controller,
+    this.enabled = true,
+    this.hasError = false,
     super.key,
   });
 
+  /// Optional controller so the parent can clear the code after a failure.
+  final TextEditingController? controller;
+  final bool enabled;
+
+  /// Highlights the boxes in the error colour.
+  final bool hasError;
   final int length;
   final ValueChanged<String> onChanged;
   final ValueChanged<String> onCompleted;
@@ -28,9 +37,14 @@ class _OtpInputFieldState extends State<OtpInputField> {
   void initState() {
     super.initState();
     _focusNode = FocusNode();
-    _controller = TextEditingController();
+    _controller = widget.controller ?? TextEditingController();
+    _controller.addListener(_onTextChanged);
 
     _focusNode.addListener(_onFocusChange);
+  }
+
+  void _onTextChanged() {
+    if (mounted) setState(() {});
   }
 
   void _onFocusChange() {
@@ -44,7 +58,8 @@ class _OtpInputFieldState extends State<OtpInputField> {
     _focusNode
       ..removeListener(_onFocusChange)
       ..dispose();
-    _controller.dispose();
+    _controller.removeListener(_onTextChanged);
+    if (widget.controller == null) _controller.dispose();
     super.dispose();
   }
 
@@ -63,13 +78,14 @@ class _OtpInputFieldState extends State<OtpInputField> {
             child: TextField(
               controller: _controller,
               focusNode: _focusNode,
+              enabled: widget.enabled,
+              autofillHints: const [AutofillHints.oneTimeCode],
               keyboardType: TextInputType.number,
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
                 LengthLimitingTextInputFormatter(widget.length),
               ],
               onChanged: (val) {
-                setState(() {});
                 widget.onChanged(val);
                 if (val.length == widget.length) {
                   widget.onCompleted(val);
@@ -94,7 +110,9 @@ class _OtpInputFieldState extends State<OtpInputField> {
               var borderColor = const Color(0xFFE5E7EB);
               var bgColor = const Color(0xFFFFFFFF);
 
-              if (isCurrentIndex) {
+              if (widget.hasError) {
+                borderColor = const Color(0xFFEF4444);
+              } else if (isCurrentIndex) {
                 borderColor = const Color(0xFFFF4040); // blinking cursor state
                 bgColor = const Color(0xFFFF4040).withValues(alpha: 0.04);
               } else if (hasValue) {
@@ -114,7 +132,9 @@ class _OtpInputFieldState extends State<OtpInputField> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: borderColor,
-                      width: hasValue || isCurrentIndex ? 2 : 1,
+                      width: hasValue || isCurrentIndex || widget.hasError
+                          ? 2
+                          : 1,
                     ),
                   ),
                   alignment: Alignment.center,

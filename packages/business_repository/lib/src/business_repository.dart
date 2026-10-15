@@ -46,41 +46,22 @@ class BusinessRepository {
     }
   }
 
+  /// Gets the ID of the business owned by [ownerId], or `null` when the
+  /// owner has not created one yet.
+  Future<String?> getBusinessIdForOwner(String ownerId) async {
+    try {
+      return await _databaseClient.getBusinessIdForUser(ownerId);
+    } catch (e) {
+      throw Exception('Failed to fetch business ID for owner: $e');
+    }
+  }
+
   /// Gets the first business ID associated with the current user.
   Future<String?> getDefaultBusinessId() async {
     try {
       return await _databaseClient.getDefaultBusinessId();
     } catch (e) {
       throw Exception('Failed to fetch default business ID: $e');
-    }
-  }
-
-  /// Creates a new customer for a given business (or returns existing ID if phone already registered).
-  Future<String> createCustomer({
-    required String businessId,
-    required String name,
-    required String phone,
-    String? email,
-    String? notes,
-  }) async {
-    try {
-      final existing = await _databaseClient.getCustomerByPhone(
-        businessId: businessId,
-        phone: phone,
-      );
-      if (existing != null) {
-        return existing['id'] as String;
-      }
-
-      return await _databaseClient.createCustomer(
-        businessId: businessId,
-        name: name,
-        phone: phone,
-        email: email,
-        notes: notes,
-      );
-    } catch (e) {
-      throw Exception('Failed to create customer: $e');
     }
   }
 

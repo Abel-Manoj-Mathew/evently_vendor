@@ -1,35 +1,28 @@
-import 'package:evently_vendor/booking/create_booking/view/create_booking_page.dart';
-import 'package:evently_vendor/customer/customer_details/view/customer_details_view.dart';
+import 'dart:async';
+
+import 'package:customer_repository/customer_repository.dart';
+import 'package:evently_vendor/customers/customer_details/cubit/customer_details_cubit.dart';
+import 'package:evently_vendor/customers/customer_details/view/customer_details_view.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class CustomerDetailsPage extends StatelessWidget {
-  const CustomerDetailsPage({
-    super.key,
-    this.customer,
-  });
+  const CustomerDetailsPage({required this.customerId, super.key});
 
-  final CustomerItem? customer;
-
-  static Route<void> route({CustomerItem? customer}) {
-    return MaterialPageRoute<void>(
-      builder: (_) => CustomerDetailsPage(customer: customer),
-    );
-  }
+  final String customerId;
 
   @override
   Widget build(BuildContext context) {
-    final effectiveCustomer = customer ??
-        const CustomerItem(
-          name: 'Sarah Johnson',
-          phone: '+1 (555) 201-4892',
-          initials: 'SJ',
-          email: 'sarah.johnson@email.com',
-          customerSince: 'Mar 2023',
-          bookingsCount: 3,
-          lastEvent: 'Wedding',
-          upcomingEvent: 'None',
+    return BlocProvider(
+      create: (context) {
+        final cubit = CustomerDetailsCubit(
+          customerRepository: context.read<CustomerRepository>(),
+          customerId: customerId,
         );
-
-    return CustomerDetailsView(customer: effectiveCustomer);
+        unawaited(cubit.load());
+        return cubit;
+      },
+      child: const CustomerDetailsView(),
+    );
   }
 }

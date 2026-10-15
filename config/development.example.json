@@ -1,0 +1,5 @@
+{
+  "EVENTLY_ENV": "development",
+  "SUPABASE_URL": "https://<development-project-ref>.supabase.co",
+  "SUPABASE_PUBLISHABLE_KEY": "<development-publishable-key>"
+}

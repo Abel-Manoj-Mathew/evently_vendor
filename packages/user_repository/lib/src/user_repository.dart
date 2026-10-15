@@ -11,6 +11,7 @@ class UserRepository {
 
   final DatabaseClient _databaseClient;
 
+  /// Whether the user with [id] has completed the profile step.
   Future<bool> profileExists(String id) async {
     try {
       return await _databaseClient.profileExists(id);
@@ -38,4 +39,3 @@ class UserRepository {
     }
   }
 }
-

@@ -1,4 +1,5 @@
-/// A Very Good Project created by Very Good CLI.
+/// Supabase data access for the Evently Vendor app.
 library;
 
 export 'src/database_client.dart';
+export 'src/exceptions.dart';

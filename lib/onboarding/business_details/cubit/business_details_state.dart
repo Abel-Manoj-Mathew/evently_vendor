@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 enum BusinessDetailsStatus {
   initial,
   loadingCategories,
+  categoriesFailure,
   loading,
   success,
   failure,

@@ -1,4 +1,8 @@
+import 'package:database_client/src/exceptions.dart';
 import 'package:supabase/supabase.dart';
+
+/// Postgres error code for unique constraint violations.
+const _uniqueViolation = '23505';
 
 /// {@template database_client}
 /// A client that handles all direct database interactions with Supabase.
@@ -23,17 +27,17 @@ class DatabaseClient {
         .toList();
   }
 
+  /// Whether a profile row exists for the user with [id].
   Future<bool> profileExists(String id) async {
-    print('DEBUG: Checking if profile exists for ID: $id');
     final existing = await _supabaseClient
         .from('profiles')
         .select('id')
         .eq('id', id)
         .maybeSingle();
-    print('DEBUG: Profile check result: $existing');
     return existing != null;
   }
 
+  /// Creates or updates the profile for the user with [id].
   Future<void> upsertProfile({
     required String id,
     String? firstName,
@@ -103,10 +107,15 @@ class DatabaseClient {
 
   /// Fetches the business ID for a given user owner ID.
   Future<String?> getBusinessIdForUser(String ownerId) async {
+    // Ordered and limited: nothing in the schema yet prevents a retried
+    // onboarding request from creating a second business, and
+    // `maybeSingle` would throw on duplicates and lock the user out.
     final response = await _supabaseClient
         .from('businesses')
         .select('id')
         .eq('owner_id', ownerId)
+        .order('created_at')
+        .limit(1)
         .maybeSingle();
 
     return response != null ? response['id'] as String : null;
@@ -119,100 +128,50 @@ class DatabaseClient {
     return getBusinessIdForUser(currentUser.id);
   }
 
-  /// Fetches a customer record by business ID and phone number if one exists.
-  Future<Map<String, dynamic>?> getCustomerByPhone({
-    required String businessId,
-    required String phone,
-  }) async {
-    final response = await _supabaseClient
-        .from('customers')
-        .select()
-        .eq('business_id', businessId)
-        .eq('phone', phone)
-        .order('created_at', ascending: false)
-        .limit(1)
-        .maybeSingle();
-
-    if (response != null) return response as Map<String, dynamic>;
-
-    // Digit-only fallback check for matching phone numbers (e.g. "+1 (555) 201-4892" vs "+15552014892")
-    final sanitizedInput = phone.replaceAll(RegExp(r'\D'), '');
-    if (sanitizedInput.isNotEmpty) {
-      final allCustomers = await getCustomers(businessId: businessId);
-      for (final c in allCustomers) {
-        final cPhone = (c['phone'] as String? ?? '').replaceAll(RegExp(r'\D'), '');
-        if (cPhone.isNotEmpty && cPhone == sanitizedInput) {
-          return c;
-        }
-      }
-    }
-
-    return null;
-  }
-
-  /// Inserts a new customer record into the database, or returns an existing one if phone already exists.
+  /// Inserts a new customer record and returns the stored row.
+  ///
+  /// Shared phone numbers are allowed by product decision; duplicate
+  /// detection is a warning handled by the caller. Throws a
+  /// [DuplicateRecordException] if the database still enforces a unique
+  /// phone number (migrations before `0004`).
   Future<Map<String, dynamic>> insertCustomer({
     required String businessId,
     required String name,
-    required String phone,
+    String? phone,
     String? email,
     String? notes,
   }) async {
-    final existing = await getCustomerByPhone(
-      businessId: businessId,
-      phone: phone,
-    );
-    if (existing != null) {
-      return existing;
-    }
-
     final payload = <String, dynamic>{
       'business_id': businessId,
       'name': name,
-      'phone': phone,
-      if (email != null && email.isNotEmpty) 'email': email,
-      if (notes != null && notes.isNotEmpty) 'notes': notes,
+      'phone': ?phone,
+      'email': ?email,
+      'notes': ?notes,
       'updated_at': DateTime.now().toUtc().toIso8601String(),
     };
 
     try {
-      final response = await _supabaseClient
+      return await _supabaseClient
           .from('customers')
           .insert(payload)
           .select()
           .single();
-
-      return response as Map<String, dynamic>;
-    } catch (_) {
-      // Fallback check in case of concurrent insert / database unique constraint
-      final existingAfterErr = await getCustomerByPhone(
-        businessId: businessId,
-        phone: phone,
-      );
-      if (existingAfterErr != null) {
-        return existingAfterErr;
+    } on PostgrestException catch (error) {
+      if (error.code == _uniqueViolation) {
+        throw DuplicateRecordException(error);
       }
       rethrow;
     }
   }
 
-  /// Creates a new customer for a given business.
-  /// Returns the newly created customer ID.
-  Future<String> createCustomer({
-    required String businessId,
-    required String name,
-    required String phone,
-    String? email,
-    String? notes,
-  }) async {
-    final result = await insertCustomer(
-      businessId: businessId,
-      name: name,
-      phone: phone,
-      email: email,
-      notes: notes,
-    );
-    return result['id'] as String;
+  /// Fetches a customer by [id], or `null` if it does not exist or the
+  /// current user may not access it.
+  Future<Map<String, dynamic>?> getCustomerById(String id) {
+    return _supabaseClient
+        .from('customers')
+        .select()
+        .eq('id', id)
+        .maybeSingle();
   }
 
   /// Fetches all customers for a given business ID.
@@ -225,17 +184,16 @@ class DatabaseClient {
         .eq('business_id', businessId)
         .order('created_at', ascending: false);
 
-    return (response as List<dynamic>)
-        .map((row) => row as Map<String, dynamic>)
-        .toList();
+    return response;
   }
 
   /// Fetches the current user's vendor profile details.
   Future<Map<String, dynamic>> getVendorProfileDetails() async {
     final user = _supabaseClient.auth.currentUser!;
-    
+
     // Default fallback values
-    var businessName = user.userMetadata?['business_name'] as String? ?? 'Unknown Business';
+    var businessName =
+        user.userMetadata?['business_name'] as String? ?? 'Unknown Business';
     var location = 'Location not set';
     var category = 'Category not set';
     final phone = user.phone ?? 'No phone number';
@@ -252,14 +210,19 @@ class DatabaseClient {
       if (businessResponse != null) {
         businessName = businessResponse['name'] as String? ?? businessName;
         location = businessResponse['location'] as String? ?? location;
-        
-        final categoriesList = businessResponse['business_category_selections'] as List<dynamic>?;
+
+        final categoriesList =
+            businessResponse['business_category_selections'] as List<dynamic>?;
         if (categoriesList != null && categoriesList.isNotEmpty) {
-          category = (categoriesList.first as Map<String, dynamic>)['name'] as String? ?? category;
+          category =
+              (categoriesList.first as Map<String, dynamic>)['name']
+                  as String? ??
+              category;
         }
       }
-    } catch (e) {
-      print('DEBUG: Error fetching business profile details: $e');
+    } on PostgrestException {
+      // Fall back to the account-level values above; the caller still
+      // receives a usable profile.
     }
 
     return {
@@ -271,5 +234,3 @@ class DatabaseClient {
     };
   }
 }
-
-

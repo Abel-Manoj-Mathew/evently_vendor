@@ -1,10 +1,14 @@
 import 'dart:async';
 import 'dart:developer';
 
+import 'package:authentication_client/authentication_client.dart';
 import 'package:bloc/bloc.dart';
 import 'package:business_repository/business_repository.dart';
 import 'package:customer_repository/customer_repository.dart';
 import 'package:database_client/database_client.dart';
+import 'package:env/env.dart';
+import 'package:evently_vendor/app/app_dependencies.dart';
+import 'package:evently_vendor/app/view/config_error_app.dart';
 import 'package:evently_vendor/firebase/firebase_messaging_background_handler.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -21,7 +25,8 @@ class AppBlocObserver extends BlocObserver {
   @override
   void onChange(BlocBase<dynamic> bloc, Change<dynamic> change) {
     super.onChange(bloc, change);
-    log('onChange(${bloc.runtimeType}, $change)');
+    // State contents can include phone numbers and names; log types only.
+    log('onChange(${bloc.runtimeType})');
   }
 
   @override
@@ -46,13 +51,8 @@ class InMemoryNotificationsClient implements NotificationsClient {
 }
 
 Future<void> bootstrap(
-  FutureOr<Widget> Function(
-    NotificationsRepository notificationsRepository,
-    UserRepository userRepository,
-    BusinessRepository businessRepository,
-    CustomerRepository customerRepository,
-  )
-  builder, {
+  FutureOr<Widget> Function(AppDependencies dependencies) builder, {
+  required AppEnvironment environment,
   required FirebaseOptions firebaseOptions,
 }) async {
   FlutterError.onError = (details) {
@@ -63,9 +63,19 @@ Future<void> bootstrap(
 
   WidgetsFlutterBinding.ensureInitialized();
 
+  final AppConfig config;
+  try {
+    config = AppConfig.fromEnvironment(expected: environment);
+  } on AppConfigException catch (error) {
+    // Fail loudly instead of falling back to another environment.
+    log(error.toString(), name: 'EVENTLY_CONFIG');
+    runApp(ConfigErrorApp(problems: error.problems));
+    return;
+  }
+
   await Supabase.initialize(
-    url: 'https://qphwywulvgwaqeprifqs.supabase.co',
-    publishableKey: 'sb_publishable_92Av1z6wGLFYvbRbyol-sw_Ha9LqRro',
+    url: config.supabaseUrl,
+    publishableKey: config.supabasePublishableKey,
   );
 
   NotificationsRepository notificationsRepository;
@@ -78,14 +88,10 @@ Future<void> bootstrap(
       firebaseMessagingBackgroundHandler,
     );
 
-    // Foreground handler
+    // Foreground handler. Payloads can contain customer details, so only
+    // the fact that a message arrived is logged.
     FirebaseMessaging.onMessage.listen((message) {
-      log('Got a message whilst in the foreground!');
-      log('Message data: ${message.data}');
-
-      if (message.notification != null) {
-        log('Message also contained a notification: ${message.notification}');
-      }
+      log('Received a foreground message: ${message.messageId}');
     });
 
     // Tap handler (App opened from notification)
@@ -120,29 +126,20 @@ Future<void> bootstrap(
     );
   }
 
-  final databaseClient = DatabaseClient(
-    supabaseClient: Supabase.instance.client,
-  );
-
-  final userRepository = UserRepository(
-    databaseClient: databaseClient,
-  );
-
-  final businessRepository = BusinessRepository(
-    databaseClient: databaseClient,
-  );
-
-  final customerRepository = CustomerRepository(
-    databaseClient: databaseClient,
-  );
+  final supabaseClient = Supabase.instance.client;
+  final databaseClient = DatabaseClient(supabaseClient: supabaseClient);
 
   runApp(
     await builder(
-      notificationsRepository,
-      userRepository,
-      businessRepository,
-      customerRepository,
+      AppDependencies(
+        authenticationClient: AuthenticationClient(
+          authClient: supabaseClient.auth,
+        ),
+        notificationsRepository: notificationsRepository,
+        userRepository: UserRepository(databaseClient: databaseClient),
+        businessRepository: BusinessRepository(databaseClient: databaseClient),
+        customerRepository: CustomerRepository(databaseClient: databaseClient),
+      ),
     ),
   );
 }
-

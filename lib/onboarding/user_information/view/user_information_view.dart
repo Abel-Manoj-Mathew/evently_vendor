@@ -1,14 +1,26 @@
 import 'dart:async';
 
-import 'package:evently_vendor/onboarding/business_details/business_details.dart';
+import 'package:evently_vendor/app/bloc/app_bloc.dart';
 import 'package:evently_vendor/onboarding/user_information/cubit/user_information_cubit.dart';
 import 'package:evently_vendor/onboarding/user_information/cubit/user_information_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UserInformationView extends StatefulWidget {
-  const UserInformationView({super.key});
+  const UserInformationView({
+    required this.onBack,
+    required this.onSaved,
+    this.backTooltip = 'Back',
+    super.key,
+  });
+
+  /// Called by the back button. Onboarding has no route history, so the
+  /// owner decides what "back" means for each step.
+  final VoidCallback onBack;
+  final String backTooltip;
+
+  /// Called after the step was saved successfully.
+  final VoidCallback onSaved;
 
   @override
   State<UserInformationView> createState() => _UserInformationViewState();
@@ -66,7 +78,7 @@ class _UserInformationViewState extends State<UserInformationView> {
     final firstName = _firstNameController.text.trim();
     final lastName = _lastNameController.text.trim();
 
-    final user = Supabase.instance.client.auth.currentUser;
+    final user = context.read<AppBloc>().state.user;
     if (user != null) {
       unawaited(
         context.read<UserInformationCubit>().updateProfile(
@@ -84,11 +96,7 @@ class _UserInformationViewState extends State<UserInformationView> {
     return BlocConsumer<UserInformationCubit, UserInformationState>(
       listener: (context, state) {
         if (state.status == UserInformationStatus.success) {
-          unawaited(
-            Navigator.of(context).push(
-              BusinessDetailsPage.route(),
-            ),
-          );
+          widget.onSaved();
         } else if (state.status == UserInformationStatus.failure) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -114,19 +122,16 @@ class _UserInformationViewState extends State<UserInformationView> {
                 children: [
                   // Top Bar / Back button
                   Padding(
-                    padding: const EdgeInsets.only(top: 16),
-                    child: GestureDetector(
-                      onTap: () => Navigator.of(context).pop(),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        color: Colors.transparent,
-                        alignment: Alignment.centerLeft,
-                        child: const Icon(
-                          Icons.arrow_back,
-                          size: 20,
-                          color: Color(0xFF111827),
-                        ),
+                    padding: const EdgeInsets.only(top: 4),
+                    child: IconButton(
+                      tooltip: widget.backTooltip,
+                      padding: EdgeInsets.zero,
+                      alignment: Alignment.centerLeft,
+                      onPressed: isLoading ? null : widget.onBack,
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        size: 20,
+                        color: Color(0xFF111827),
                       ),
                     ),
                   ),

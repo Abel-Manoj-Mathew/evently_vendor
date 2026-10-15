@@ -8,6 +8,7 @@ export 'theme/app_theme.dart';
 export 'typography/app_font_weight.dart';
 export 'typography/app_text_styles.dart';
 export 'widgets/app_button.dart';
+export 'widgets/app_empty_state.dart';
 export 'widgets/app_loading_progress.dart';
 export 'widgets/app_scaffold.dart';
 export 'widgets/app_text_field.dart';

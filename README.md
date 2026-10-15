@@ -18,17 +18,30 @@ This project contains 3 flavors:
 - staging
 - production
 
+Each flavor reads its backend configuration from `config/<flavor>.json`
+via `--dart-define-from-file`. These files are gitignored; create them from
+the committed examples:
+
+```sh
+cp config/development.example.json config/development.json
+# then fill in the development Supabase URL and publishable key
+```
+
+A build without a valid configuration file stops at startup with an
+explanation instead of falling back to another environment. See
+[docs/phase-1-report.md](docs/phase-1-report.md#2-environment-configuration).
+
 To run the desired flavor either use the launch configuration in VSCode/Android Studio or use the following commands:
 
 ```sh
 # Development
-$ flutter run --flavor development --target lib/main_development.dart
+$ flutter run --flavor development --target lib/main_development.dart --dart-define-from-file=config/development.json
 
 # Staging
-$ flutter run --flavor staging --target lib/main_staging.dart
+$ flutter run --flavor staging --target lib/main_staging.dart --dart-define-from-file=config/staging.json
 
 # Production
-$ flutter run --flavor production --target lib/main_production.dart
+$ flutter run --flavor production --target lib/main_production.dart --dart-define-from-file=config/production.json
 ```
 
 _\*Evently Vendor works on iOS, Android, Web, and Windows._

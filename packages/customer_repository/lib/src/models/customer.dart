@@ -9,7 +9,7 @@ class Customer extends Equatable {
     required this.id,
     required this.businessId,
     required this.name,
-    required this.phone,
+    this.phone,
     this.email,
     this.notes,
     this.createdAt,
@@ -22,7 +22,7 @@ class Customer extends Equatable {
       id: json['id'] as String,
       businessId: json['business_id'] as String,
       name: json['name'] as String,
-      phone: json['phone'] as String,
+      phone: json['phone'] as String?,
       email: json['email'] as String?,
       notes: json['notes'] as String?,
       createdAt: json['created_at'] != null
@@ -43,8 +43,9 @@ class Customer extends Equatable {
   /// The customer's full name.
   final String name;
 
-  /// The customer's phone number.
-  final String phone;
+  /// The customer's phone number, if known. Several customers may share
+  /// one number.
+  final String? phone;
 
   /// The customer's email address.
   final String? email;
@@ -84,13 +85,13 @@ class Customer extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        businessId,
-        name,
-        phone,
-        email,
-        notes,
-        createdAt,
-        updatedAt,
-      ];
+    id,
+    businessId,
+    name,
+    phone,
+    email,
+    notes,
+    createdAt,
+    updatedAt,
+  ];
 }

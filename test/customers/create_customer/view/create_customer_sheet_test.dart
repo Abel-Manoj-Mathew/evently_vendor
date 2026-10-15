@@ -1,68 +1,125 @@
 import 'package:customer_repository/customer_repository.dart';
-import 'package:evently_vendor/customer/create_customer/create_customer.dart';
+import 'package:evently_vendor/customers/customers.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockCustomerRepository extends Mock implements CustomerRepository {}
+import '../../../helpers/helpers.dart';
+
+const _existing = Customer(
+  id: 'c1',
+  businessId: 'b1',
+  name: 'Anu Thomas',
+  phone: '+919876543210',
+);
+const _created = Customer(id: 'c2', businessId: 'b1', name: 'Biju Thomas');
 
 void main() {
-  group('CreateCustomerSheet', () {
-    late CustomerRepository customerRepository;
+  late CustomerRepository repository;
+  Customer? result;
 
-    setUp(() {
-      customerRepository = MockCustomerRepository();
-    });
+  setUp(() {
+    result = null;
+    repository = MockCustomerRepository();
+    when(
+      () => repository.getBusinessIdForUser(any()),
+    ).thenAnswer((_) async => 'b1');
+    when(
+      () => repository.findPotentialDuplicates(
+        businessId: any(named: 'businessId'),
+        phone: any(named: 'phone'),
+      ),
+    ).thenAnswer((_) async => [_existing]);
+    when(
+      () => repository.createCustomer(
+        businessId: any(named: 'businessId'),
+        name: any(named: 'name'),
+        phone: any(named: 'phone'),
+        email: any(named: 'email'),
+        notes: any(named: 'notes'),
+      ),
+    ).thenAnswer((_) async => _created);
+  });
 
-    testWidgets('renders all input fields and submit button', (tester) async {
-      tester.view.physicalSize = const Size(375, 812);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      await tester.pumpWidget(
-        RepositoryProvider<CustomerRepository>.value(
-          value: customerRepository,
-          child: const MaterialApp(
-            home: Scaffold(
-              body: CreateCustomerSheet(),
-            ),
+  Future<void> openSheet(WidgetTester tester) async {
+    await tester.pumpApp(
+      Builder(
+        builder: (context) => Scaffold(
+          body: TextButton(
+            onPressed: () async =>
+                result = await CreateCustomerSheet.show(context),
+            child: const Text('open'),
           ),
         ),
-      );
+      ),
+      customerRepository: repository,
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+  }
 
-      expect(find.text('Add New Customer'), findsOneWidget);
-      expect(find.text('Full Name *'), findsOneWidget);
-      expect(find.text('Phone Number *'), findsOneWidget);
-      expect(find.text('Email Address (Optional)'), findsOneWidget);
-      expect(find.text('Notes (Optional)'), findsOneWidget);
-      expect(find.text('Save Customer'), findsOneWidget);
-    });
+  Future<void> fillAndSave(WidgetTester tester) async {
+    await tester.enterText(
+      find.widgetWithText(TextField, 'e.g. Anu Thomas'),
+      'Biju Thomas',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'e.g. 98765 43210'),
+      '98765 43210',
+    );
+    await tester.tap(find.text('Save Customer'));
+    await tester.pumpAndSettle();
+  }
 
-    testWidgets('shows validation errors when submitting empty form',
-        (tester) async {
-      tester.view.physicalSize = const Size(375, 812);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets('renders fields with phone marked optional', (tester) async {
+    await openSheet(tester);
+    expect(find.text('Add New Customer'), findsOneWidget);
+    expect(find.text('Full Name *'), findsOneWidget);
+    expect(find.text('Phone Number (Optional)'), findsOneWidget);
+    expect(find.text('Email Address (Optional)'), findsOneWidget);
+    expect(find.text('Notes (Optional)'), findsOneWidget);
+    expect(find.text('Save Customer'), findsOneWidget);
+  });
 
-      await tester.pumpWidget(
-        RepositoryProvider<CustomerRepository>.value(
-          value: customerRepository,
-          child: const MaterialApp(
-            home: Scaffold(
-              body: CreateCustomerSheet(),
-            ),
-          ),
-        ),
-      );
+  testWidgets('requires a name', (tester) async {
+    await openSheet(tester);
+    await tester.tap(find.text('Save Customer'));
+    await tester.pump();
+    expect(find.text('Customer name is required'), findsOneWidget);
+  });
 
-      await tester.tap(find.text('Save Customer'));
-      await tester.pump();
+  testWidgets('can reuse an existing customer from the duplicate warning', (
+    tester,
+  ) async {
+    await openSheet(tester);
+    await fillAndSave(tester);
 
-      expect(find.text('Customer name is required'), findsOneWidget);
-      expect(find.text('Phone number is required'), findsOneWidget);
-    });
+    expect(find.text('Possible duplicate'), findsOneWidget);
+    await tester.tap(find.text('Use'));
+    await tester.pumpAndSettle();
+
+    expect(result, _existing);
+    verifyNever(
+      () => repository.createCustomer(
+        businessId: any(named: 'businessId'),
+        name: any(named: 'name'),
+        phone: any(named: 'phone'),
+        email: any(named: 'email'),
+        notes: any(named: 'notes'),
+      ),
+    );
+  });
+
+  testWidgets('can create a new customer that shares the phone', (
+    tester,
+  ) async {
+    await openSheet(tester);
+    await fillAndSave(tester);
+
+    await tester.tap(find.text('Create new customer'));
+    await tester.pumpAndSettle();
+
+    expect(result, _created);
+    expect(find.text('Add New Customer'), findsNothing);
   });
 }

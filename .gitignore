@@ -112,3 +112,10 @@ app.*.map.json
 
 # Generated l10n files
 lib/l10n/gen/
+
+# Environment configuration (see docs/phase-1-report.md)
+# Real values live in config/<environment>.json and are never committed.
+config/*.json
+!config/*.example.json
+.env
+.env.*

@@ -1,576 +1,217 @@
 import 'dart:async';
 
+import 'package:app_ui/app_ui.dart';
 import 'package:customer_repository/customer_repository.dart';
-import 'package:evently_vendor/customer/customer.dart';
-import 'package:evently_vendor/customers/create_customer/create_customer.dart';
+import 'package:evently_vendor/app/bloc/app_bloc.dart';
+import 'package:evently_vendor/app/routing/app_routes.dart';
+import 'package:evently_vendor/booking/create_booking/cubit/select_customer_cubit.dart';
+import 'package:evently_vendor/customers/customers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:go_router/go_router.dart';
 
-/// Customer data model for booking selection.
-class CustomerItem {
-  const CustomerItem({
-    required this.name,
-    required this.phone,
-    required this.initials,
-    required this.email,
-    required this.customerSince,
-    required this.bookingsCount,
-    required this.lastEvent,
-    required this.upcomingEvent,
-  });
-
-  final String name;
-  final String phone;
-  final String initials;
-  final String email;
-  final String customerSince;
-  final int bookingsCount;
-  final String lastEvent;
-  final String upcomingEvent;
-}
-
-const List<CustomerItem> kRecentCustomers = [
-  CustomerItem(
-    name: 'Sarah Johnson',
-    phone: '+1 (555) 201-4892',
-    initials: 'SJ',
-    email: 'sarah.johnson@email.com',
-    customerSince: 'Mar 2023',
-    bookingsCount: 3,
-    lastEvent: 'Wedding',
-    upcomingEvent: 'None',
-  ),
-  CustomerItem(
-    name: 'Marcus Rivera',
-    phone: '+1 (555) 384-7710',
-    initials: 'MR',
-    email: 'marcus.rivera@email.com',
-    customerSince: 'Jan 2024',
-    bookingsCount: 2,
-    lastEvent: 'Birthday',
-    upcomingEvent: 'Corporate',
-  ),
-  CustomerItem(
-    name: 'Priya Nair',
-    phone: '+1 (555) 609-3345',
-    initials: 'PN',
-    email: 'priya.nair@email.com',
-    customerSince: 'Nov 2023',
-    bookingsCount: 5,
-    lastEvent: 'Anniversary',
-    upcomingEvent: 'Wedding',
-  ),
-  CustomerItem(
-    name: 'Tom Okafor',
-    phone: '+1 (555) 772-0128',
-    initials: 'TO',
-    email: 'tom.okafor@email.com',
-    customerSince: 'Feb 2024',
-    bookingsCount: 1,
-    lastEvent: 'Conference',
-    upcomingEvent: 'None',
-  ),
-];
-
-/// First step in Create Booking flow to select or search a customer.
-class CreateBookingPage extends StatefulWidget {
+/// First step of the booking flow: choose or add a customer.
+///
+/// Booking creation is unfinished; only this step exists. The screen says
+/// so instead of pretending the flow is complete.
+class CreateBookingPage extends StatelessWidget {
   const CreateBookingPage({super.key});
 
-  static Route<void> route() {
-    return MaterialPageRoute<void>(
-      builder: (_) => const CreateBookingPage(),
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) {
+        final cubit = SelectCustomerCubit(
+          customerRepository: context.read<CustomerRepository>(),
+          ownerId: context.read<AppBloc>().state.user!.id,
+        );
+        unawaited(cubit.load());
+        return cubit;
+      },
+      child: const CreateBookingView(),
     );
   }
-
-  @override
-  State<CreateBookingPage> createState() => _CreateBookingPageState();
 }
 
-class _CreateBookingPageState extends State<CreateBookingPage> {
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
-  late List<CustomerItem> _customers;
+class CreateBookingView extends StatelessWidget {
+  const CreateBookingView({super.key});
 
-  @override
-  void initState() {
-    super.initState();
-    _customers = List<CustomerItem>.from(kRecentCustomers);
-    _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text.trim().toLowerCase();
-      });
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadCustomersFromDatabase();
-    });
-  }
-
-  Future<void> _loadCustomersFromDatabase() async {
-    try {
-      final customerRepo = context.read<CustomerRepository>();
-      
-      User? currentUser;
-      try {
-        currentUser = Supabase.instance.client.auth.currentUser;
-      } catch (_) {}
-
-      String? businessId;
-      if (currentUser != null) {
-        try {
-          businessId =
-              await customerRepo.getBusinessIdForUser(currentUser.id);
-        } catch (_) {}
-      }
-      businessId ??= '00000000-0000-0000-0000-000000000000';
-
-      final dbCustomers =
-          await customerRepo.getCustomers(businessId: businessId);
-      if (mounted && dbCustomers.isNotEmpty) {
-        final mappedItems = dbCustomers.map((c) {
-          return CustomerItem(
-            name: c.name,
-            phone: c.phone,
-            initials: c.initials,
-            email: c.email ?? '',
-            customerSince: c.createdAt != null
-                ? _formatCustomerSince(c.createdAt!)
-                : 'Recent',
-            bookingsCount: 0,
-            lastEvent: 'None',
-            upcomingEvent: 'None',
-          );
-        }).toList();
-
-        setState(() {
-          _customers = mappedItems;
-        });
-      }
-    } catch (_) {
-      // Ignore background load failures silently if unauthenticated or offline
-    }
-  }
-
-  static String _formatCustomerSince(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.year}';
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  List<CustomerItem> get _filteredCustomers {
-    if (_searchQuery.isEmpty) return _customers;
-    return _customers.where((customer) {
-      return customer.name.toLowerCase().contains(_searchQuery) ||
-          customer.phone.toLowerCase().contains(_searchQuery);
-    }).toList();
-  }
-
-  void _onCustomerSelected(CustomerItem customer) {
-    unawaited(
-      Navigator.of(context).push(
-        CustomerDetailsPage.route(customer: customer),
+  Future<void> _addCustomer(BuildContext context) async {
+    final cubit = context.read<SelectCustomerCubit>();
+    final messenger = ScaffoldMessenger.of(context);
+    final customer = await CreateCustomerSheet.show(context);
+    if (customer == null) return;
+    cubit.customerAdded(customer);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text('${customer.name} is ready to use.'),
+        backgroundColor: AppColors.success,
       ),
     );
-  }
-
-  Future<void> _onNewCustomerPressed() async {
-    final newCustomer = await CreateCustomerSheet.show(context);
-    if (newCustomer != null && mounted) {
-      final existingIndex =
-          _customers.indexWhere((c) => c.phone == newCustomer.phone);
-      setState(() {
-        if (existingIndex != -1) {
-          _customers[existingIndex] = newCustomer;
-        } else {
-          _customers.insert(0, newCustomer);
-        }
-      });
-      final message = existingIndex != -1
-          ? 'Customer with this mobile number already exists: ${newCustomer.name}'
-          : 'Customer ${newCustomer.name} saved successfully!';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: const Color(0xFF10B981),
-        ),
-      );
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Top Bar
-            Container(
-              color: const Color(0xFFFFFFFF),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      left: 16,
-                      right: 20,
-                      top: 14,
-                      bottom: 14,
-                    ),
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => Navigator.of(context).pop(),
-                          child: Container(
-                            width: 44,
-                            height: 44,
-                            color: Colors.transparent,
-                            alignment: Alignment.centerLeft,
-                            child: const Icon(
-                              Icons.arrow_back,
-                              size: 20,
-                              color: Color(0xFF1A1A1A),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'Create Booking',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF1A1A1A),
-                            height: 1.2,
-                            fontFamily: 'Inter',
-                          ),
-                        ),
-                      ],
-                    ),
+      backgroundColor: AppColors.white,
+      appBar: AppBar(
+        backgroundColor: AppColors.white,
+        title: const Text('Create Booking'),
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _UnfinishedBanner(),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 20, 20, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Select a customer',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
                   ),
-
-                  // Progress Step Indicator (Step 1 of 6: 16.66%)
-                  Container(
-                    width: double.infinity,
-                    height: 3,
-                    color: const Color(0xFFF1F1F1),
-                    alignment: Alignment.centerLeft,
-                    child: FractionallySizedBox(
-                      widthFactor: 0.1666,
-                      child: Container(
-                        color: const Color(0xFFFF4040),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Search an existing customer or create a new one.',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+            child: TextField(
+              onChanged: context.read<SelectCustomerCubit>().queryChanged,
+              decoration: const InputDecoration(
+                hintText: 'Search by customer name or mobile number',
+                prefixIcon: Icon(Icons.search),
               ),
             ),
-
-            // Scrollable Content Body
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.only(
-                  left: 20,
-                  right: 20,
-                  top: 24,
-                  bottom: 120,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title Block
-                    const Text(
-                      'Select a customer',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1A1A1A),
-                        height: 1.25,
-                        fontFamily: 'Inter',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Search an existing customer or create a new one.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xFF6B6B6B),
-                        height: 1.5,
-                        fontFamily: 'Inter',
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Search Input Bar
-                    Container(
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFAFAFA),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: const Color(0xFFEAEAEA),
-                        ),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.search,
-                            size: 18,
-                            color: Color(0xFF8A8A8A),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextField(
-                              controller: _searchController,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                                color: Color(0xFF1A1A1A),
-                                fontFamily: 'Inter',
-                              ),
-                              decoration: const InputDecoration(
-                                hintText:
-                                    'Search by customer name or mobile number',
-                                hintStyle: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w400,
-                                  color: Color(0xFF8A8A8A),
-                                  fontFamily: 'Inter',
-                                ),
-                                filled: false,
-                                fillColor: Colors.transparent,
-                                border: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                disabledBorder: InputBorder.none,
-                                errorBorder: InputBorder.none,
-                                contentPadding: EdgeInsets.zero,
-                                isDense: true,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Recent Customers Section
-                    const Padding(
-                      padding: EdgeInsets.only(left: 4, bottom: 12),
-                      child: Text(
-                        'RECENT CUSTOMERS',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF6B6B6B),
-                          letterSpacing: 0.65,
-                          fontFamily: 'Inter',
-                        ),
-                      ),
-                    ),
-
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFFFFF),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: const Color(0xFFEAEAEA),
-                        ),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: _filteredCustomers.isEmpty
-                          ? const Padding(
-                              padding: EdgeInsets.all(24),
-                              child: Center(
-                                child: Text(
-                                  'No customers found matching your search.',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w400,
-                                    color: Color(0xFF8A8A8A),
-                                    fontFamily: 'Inter',
-                                  ),
-                                ),
-                              ),
-                            )
-                          : Column(
-                              children: List.generate(
-                                _filteredCustomers.length,
-                                (index) {
-                                  final customer = _filteredCustomers[index];
-                                  final isLast = index ==
-                                      _filteredCustomers.length - 1;
-                                  return Column(
-                                    children: [
-                                      InkWell(
-                                        onTap: () =>
-                                            _onCustomerSelected(customer),
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 14,
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              // Avatar Circle with Initials
-                                              Container(
-                                                width: 40,
-                                                height: 40,
-                                                decoration: BoxDecoration(
-                                                  color:
-                                                      const Color(0xFFF5F5F5),
-                                                  shape: BoxShape.circle,
-                                                  border: Border.all(
-                                                    color:
-                                                        const Color(0xFFEAEAEA),
-                                                  ),
-                                                ),
-                                                alignment: Alignment.center,
-                                                child: Text(
-                                                  customer.initials,
-                                                  style: const TextStyle(
-                                                    fontSize: 13,
-                                                    fontWeight: FontWeight.w700,
-                                                    color: Color(0xFF6B6B6B),
-                                                    fontFamily: 'Inter',
-                                                  ),
-                                                ),
-                                              ),
-
-                                              const SizedBox(width: 12),
-
-                                              // Name & Phone Number Column
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      customer.name,
-                                                      style: const TextStyle(
-                                                        fontSize: 14,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        color: Color(0xFF1A1A1A),
-                                                        height: 1.2,
-                                                        fontFamily: 'Inter',
-                                                      ),
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow
-                                                          .ellipsis,
-                                                    ),
-                                                    const SizedBox(height: 3),
-                                                    Text(
-                                                      customer.phone,
-                                                      style: const TextStyle(
-                                                        fontSize: 13,
-                                                        fontWeight:
-                                                            FontWeight.w400,
-                                                        color: Color(0xFF8A8A8A),
-                                                        height: 1.2,
-                                                        fontFamily: 'Inter',
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-
-                                              const SizedBox(width: 12),
-
-                                              // Chevron Right Icon
-                                              const Icon(
-                                                Icons.chevron_right_rounded,
-                                                size: 18,
-                                                color: Color(0xFFA0A0A0),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      if (!isLast)
-                                        const Divider(
-                                          height: 1,
-                                          thickness: 1,
-                                          color: Color(0xFFF1F1F1),
-                                        ),
-                                    ],
-                                  );
-                                },
-                              ),
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Bottom Fixed Button Bar
-            Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFFFFFFFF),
-                border: Border(
-                  top: BorderSide(
-                    color: Color(0xFFEAEAEA),
-                  ),
-                ),
-              ),
-              padding: const EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 16,
-                bottom: 24,
-              ),
+          ),
+          const Expanded(child: _CustomerList()),
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
               child: SizedBox(
                 width: double.infinity,
-                height: 48,
-                child: OutlinedButton(
-                  onPressed: _onNewCustomerPressed,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFFFF4040),
-                    side: const BorderSide(
-                      color: Color(0xFFFF4040),
-                      width: 1.5,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    '+ New Customer',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'Inter',
-                    ),
-                  ),
+                height: 50,
+                child: OutlinedButton.icon(
+                  onPressed: () => unawaited(_addCustomer(context)),
+                  icon: const Icon(Icons.person_add_alt_1_outlined),
+                  label: const Text('New Customer'),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+  }
+}
+
+class _UnfinishedBanner extends StatelessWidget {
+  const _UnfinishedBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFFFFF7ED),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: const Row(
+        children: [
+          Icon(Icons.construction_outlined, color: Color(0xFFC2410C), size: 20),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Booking creation is still being built. You can choose or add '
+              'customers now; saving bookings is coming soon.',
+              style: TextStyle(fontSize: 13, color: Color(0xFF9A3412)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CustomerList extends StatelessWidget {
+  const _CustomerList();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<SelectCustomerCubit>().state;
+    switch (state.status) {
+      case SelectCustomerStatus.loading:
+        return const Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        );
+      case SelectCustomerStatus.noBusiness:
+        return const AppEmptyState(
+          icon: Icons.storefront_outlined,
+          title: 'No business found',
+          message: 'Finish setting up your business to add customers.',
+        );
+      case SelectCustomerStatus.failure:
+        return AppEmptyState(
+          icon: Icons.cloud_off_outlined,
+          title: "Couldn't load customers",
+          message: 'Check your internet connection and try again.',
+          action: FilledButton(
+            onPressed: () =>
+                unawaited(context.read<SelectCustomerCubit>().load()),
+            child: const Text('Try again'),
+          ),
+        );
+      case SelectCustomerStatus.success:
+        final customers = state.visibleCustomers;
+        if (state.customers.isEmpty) {
+          return const AppEmptyState(
+            icon: Icons.people_outline,
+            title: 'No customers yet',
+            message: 'Add your first customer to start a booking.',
+          );
+        }
+        if (customers.isEmpty) {
+          return const AppEmptyState(
+            icon: Icons.search_off,
+            title: 'No matching customers',
+            message: 'Try another name or number, or add a new customer.',
+          );
+        }
+        return ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          itemCount: customers.length,
+          separatorBuilder: (_, _) => const Divider(height: 1),
+          itemBuilder: (context, index) {
+            final customer = customers[index];
+            return ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: CircleAvatar(
+                backgroundColor: AppColors.primaryLight,
+                child: Text(
+                  customer.initials,
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              title: Text(customer.name),
+              subtitle: Text(customer.phone ?? 'No phone number'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => unawaited(
+                context.push(AppRoutes.customerDetails(customer.id)),
+              ),
+            );
+          },
+        );
+    }
   }
 }

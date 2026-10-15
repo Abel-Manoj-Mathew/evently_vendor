@@ -1,4 +1,3 @@
-export 'config/app_flavour.dart';
 export 'config/config.dart';
 export 'config/logger.dart';
 export 'extensions/date_time_extension.dart';

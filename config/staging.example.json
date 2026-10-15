@@ -1,0 +1,5 @@
+{
+  "EVENTLY_ENV": "staging",
+  "SUPABASE_URL": "https://<staging-project-ref>.supabase.co",
+  "SUPABASE_PUBLISHABLE_KEY": "<staging-publishable-key>"
+}

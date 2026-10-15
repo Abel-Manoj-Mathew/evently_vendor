@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:evently_vendor/onboarding/user_information/cubit/user_information_state.dart';
+import 'package:shared/shared.dart';
 import 'package:user_repository/user_repository.dart';
 
 class UserInformationCubit extends Cubit<UserInformationState> {
@@ -24,9 +25,8 @@ class UserInformationCubit extends Cubit<UserInformationState> {
         phone: phone,
       );
       emit(state.copyWith(status: UserInformationStatus.success));
-    } on Object catch (e, stackTrace) {
-      print('UpdateProfile Error: $e');
-      print(stackTrace);
+    } on Object catch (error, stackTrace) {
+      logE('Saving profile failed', error: error, stackTrace: stackTrace);
       emit(state.copyWith(status: UserInformationStatus.failure));
     }
   }

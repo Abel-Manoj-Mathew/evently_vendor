@@ -1,14 +1,26 @@
 import 'dart:async';
 
-import 'package:evently_vendor/home/home.dart';
+import 'package:evently_vendor/app/bloc/app_bloc.dart';
 import 'package:evently_vendor/onboarding/business_details/cubit/business_details_cubit.dart';
 import 'package:evently_vendor/onboarding/business_details/cubit/business_details_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class BusinessDetailsView extends StatefulWidget {
-  const BusinessDetailsView({super.key});
+  const BusinessDetailsView({
+    required this.onBack,
+    required this.onSaved,
+    this.backTooltip = 'Back',
+    super.key,
+  });
+
+  /// Called by the back button. Onboarding has no route history, so the
+  /// owner decides what "back" means for each step.
+  final VoidCallback onBack;
+  final String backTooltip;
+
+  /// Called after the step was saved successfully.
+  final VoidCallback onSaved;
 
   @override
   State<BusinessDetailsView> createState() => _BusinessDetailsViewState();
@@ -68,7 +80,7 @@ class _BusinessDetailsViewState extends State<BusinessDetailsView> {
     final businessName = _businessNameController.text.trim();
     final categories = _selectedCategories.toList();
 
-    final user = Supabase.instance.client.auth.currentUser;
+    final user = context.read<AppBloc>().state.user;
     if (user != null) {
       unawaited(
         context.read<BusinessDetailsCubit>().createBusiness(
@@ -83,14 +95,11 @@ class _BusinessDetailsViewState extends State<BusinessDetailsView> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<BusinessDetailsCubit, BusinessDetailsState>(
+      // Category load failures are rendered inline in the builder: they can
+      // happen before this listener subscribes.
       listener: (context, state) {
         if (state.status == BusinessDetailsStatus.success) {
-          unawaited(
-            Navigator.of(context).pushAndRemoveUntil(
-              HomePage.route(),
-              (route) => false,
-            ),
-          );
+          widget.onSaved();
         } else if (state.status == BusinessDetailsStatus.failure) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -123,19 +132,16 @@ class _BusinessDetailsViewState extends State<BusinessDetailsView> {
                 children: [
                   // Top Bar / Back button
                   Padding(
-                    padding: const EdgeInsets.only(top: 16),
-                    child: GestureDetector(
-                      onTap: () => Navigator.of(context).pop(),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        color: Colors.transparent,
-                        alignment: Alignment.centerLeft,
-                        child: const Icon(
-                          Icons.arrow_back,
-                          size: 20,
-                          color: Color(0xFF111827),
-                        ),
+                    padding: const EdgeInsets.only(top: 4),
+                    child: IconButton(
+                      tooltip: widget.backTooltip,
+                      padding: EdgeInsets.zero,
+                      alignment: Alignment.centerLeft,
+                      onPressed: isLoading ? null : widget.onBack,
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        size: 20,
+                        color: Color(0xFF111827),
                       ),
                     ),
                   ),
@@ -338,6 +344,35 @@ class _BusinessDetailsViewState extends State<BusinessDetailsView> {
                                     child: CircularProgressIndicator(
                                       color: Color(0xFFFF4040),
                                     ),
+                                  ),
+                                )
+                              else if (state.status ==
+                                  BusinessDetailsStatus.categoriesFailure)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Expanded(
+                                        child: Text(
+                                          "Couldn't load business categories. "
+                                          'Check your connection.',
+                                          style: TextStyle(
+                                            color: Color(0xFFEF4444),
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => unawaited(
+                                          context
+                                              .read<BusinessDetailsCubit>()
+                                              .fetchCategories(),
+                                        ),
+                                        child: const Text('Retry'),
+                                      ),
+                                    ],
                                   ),
                                 )
                               else if (categoriesToDisplay.isEmpty)

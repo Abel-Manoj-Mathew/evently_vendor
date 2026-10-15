@@ -1,27 +1,15 @@
 import 'package:evently_vendor/onboarding/user_information/user_information.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:user_repository/user_repository.dart';
 
-class MockUserRepository extends Mock implements UserRepository {}
+import '../../../helpers/helpers.dart';
 
 void main() {
   group('UserInformationPage', () {
     testWidgets('renders all widgets correctly', (tester) async {
-      tester.view.physicalSize = const Size(375, 812);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      await tester.pumpWidget(
-        RepositoryProvider<UserRepository>.value(
-          value: MockUserRepository(),
-          child: const MaterialApp(
-            home: UserInformationPage(),
-          ),
-        ),
+      await tester.pumpApp(
+        UserInformationPage(onBack: () {}, onSaved: () {}),
       );
 
       expect(find.text('Tell us about yourself'), findsOneWidget);
@@ -41,18 +29,8 @@ void main() {
     });
 
     testWidgets('entering first name enables Continue button', (tester) async {
-      tester.view.physicalSize = const Size(375, 812);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      await tester.pumpWidget(
-        RepositoryProvider<UserRepository>.value(
-          value: MockUserRepository(),
-          child: const MaterialApp(
-            home: UserInformationPage(),
-          ),
-        ),
+      await tester.pumpApp(
+        UserInformationPage(onBack: () {}, onSaved: () {}),
       );
 
       final firstNameFinder = find.widgetWithText(TextField, 'First name');
@@ -65,9 +43,52 @@ void main() {
       expect(button.onPressed, isNotNull);
     });
 
-    test('route returns MaterialPageRoute', () {
-      final route = UserInformationPage.route();
-      expect(route, isA<MaterialPageRoute<void>>());
+    testWidgets('saves the profile for the signed-in user', (tester) async {
+      final userRepository = MockUserRepository();
+      when(
+        () => userRepository.updateProfile(
+          id: any(named: 'id'),
+          firstName: any(named: 'firstName'),
+          lastName: any(named: 'lastName'),
+          phone: any(named: 'phone'),
+        ),
+      ).thenAnswer((_) async {});
+      var saved = false;
+      await tester.pumpApp(
+        UserInformationPage(onBack: () {}, onSaved: () => saved = true),
+        userRepository: userRepository,
+      );
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'First name'),
+        'Abel',
+      );
+      await tester.pump();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Continue'));
+      await tester.pumpAndSettle();
+
+      verify(
+        () => userRepository.updateProfile(
+          id: testUser.id,
+          firstName: 'Abel',
+          lastName: '',
+          phone: testUser.phone,
+        ),
+      ).called(1);
+      expect(saved, isTrue);
+    });
+
+    testWidgets('back button uses the provided callback', (tester) async {
+      var backPressed = false;
+      await tester.pumpApp(
+        UserInformationPage(
+          onBack: () => backPressed = true,
+          onSaved: () {},
+          backTooltip: 'Sign out',
+        ),
+      );
+      await tester.tap(find.byTooltip('Sign out'));
+      expect(backPressed, isTrue);
     });
   });
 }

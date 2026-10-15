@@ -1,21 +1,30 @@
-import 'package:business_repository/business_repository.dart';
+import 'dart:async';
+
+import 'package:evently_vendor/app/bloc/app_bloc.dart';
+import 'package:evently_vendor/app/routing/app_routes.dart';
 import 'package:evently_vendor/profile/cubit/profile_cubit.dart';
 import 'package:evently_vendor/profile/cubit/profile_state.dart';
-import 'package:evently_vendor/profile/view/edit_business_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:go_router/go_router.dart';
 
+/// Profile tab. The [ProfileCubit] is provided by the app shell so Home and
+/// Profile share one loaded profile.
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => ProfileCubit(
-        businessRepository: context.read<BusinessRepository>(),
-      )..fetchProfile(),
+    return BlocListener<AppBloc, AppState>(
+      listenWhen: (previous, current) =>
+          !previous.signOutFailed && current.signOutFailed,
+      listener: (context, state) => ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Couldn't log out. Please try again."),
+          backgroundColor: Color(0xFFEF4444),
+        ),
+      ),
       child: const ProfileView(),
     );
   }
@@ -33,25 +42,27 @@ class ProfileView extends StatelessWidget {
 
   void _onLogout(BuildContext context) {
     // Show confirmation dialog before logging out
-    showCupertinoDialog<void>(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Log Out'),
-        content: const Text('Are you sure you want to log out?'),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          CupertinoDialogAction(
-            isDestructiveAction: true,
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Supabase.instance.client.auth.signOut();
-            },
-            child: const Text('Log Out'),
-          ),
-        ],
+    unawaited(
+      showCupertinoDialog<void>(
+        context: context,
+        builder: (ctx) => CupertinoAlertDialog(
+          title: const Text('Log Out'),
+          content: const Text('Are you sure you want to log out?'),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                context.read<AppBloc>().add(const AppSignOutRequested());
+              },
+              child: const Text('Log Out'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -83,7 +94,7 @@ class ProfileView extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // Body
             Expanded(
               child: BlocBuilder<ProfileCubit, ProfileState>(
@@ -95,7 +106,7 @@ class ProfileView extends StatelessWidget {
                       ),
                     );
                   }
-                  
+
                   if (state.status == ProfileStatus.failure) {
                     return Center(
                       child: Column(
@@ -104,14 +115,15 @@ class ProfileView extends StatelessWidget {
                           const Text('Failed to load profile.'),
                           const SizedBox(height: 12),
                           TextButton(
-                            onPressed: () => context.read<ProfileCubit>().fetchProfile(),
+                            onPressed: () =>
+                                context.read<ProfileCubit>().fetchProfile(),
                             child: const Text('Retry'),
                           ),
                         ],
                       ),
                     );
                   }
-                  
+
                   final profile = state.profile;
                   if (profile == null) return const SizedBox.shrink();
 
@@ -130,14 +142,15 @@ class ProfileView extends StatelessWidget {
                             ),
                           ),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Container(
                                 width: 72,
                                 height: 72,
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFFAFAFA),
-                                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                                  border: Border.all(
+                                    color: const Color(0xFFE5E7EB),
+                                  ),
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 alignment: Alignment.center,
@@ -175,7 +188,9 @@ class ProfileView extends StatelessWidget {
                                     ),
                                   ),
                                   const Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 8),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                    ),
                                     child: Text(
                                       '·',
                                       style: TextStyle(
@@ -201,20 +216,25 @@ class ProfileView extends StatelessWidget {
                               SizedBox(
                                 height: 36,
                                 child: OutlinedButton.icon(
-                                  onPressed: () {
-                                    Navigator.of(context).push(
-                                      EditBusinessPage.route(),
-                                    );
-                                  },
+                                  onPressed: () => unawaited(
+                                    context.push(AppRoutes.editBusiness),
+                                  ),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: const Color(0xFFFF4040),
-                                    side: const BorderSide(color: Color(0xFFFF4040)),
+                                    side: const BorderSide(
+                                      color: Color(0xFFFF4040),
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                    ),
                                   ),
-                                  icon: const Icon(Icons.edit_outlined, size: 14),
+                                  icon: const Icon(
+                                    Icons.edit_outlined,
+                                    size: 14,
+                                  ),
                                   label: const Text(
                                     'Edit Business',
                                     style: TextStyle(
@@ -233,12 +253,15 @@ class ProfileView extends StatelessWidget {
                         _buildSection(
                           title: 'BUSINESS',
                           items: [
-                            _buildRowItem('Business Name', profile.businessName),
+                            _buildRowItem(
+                              'Business Name',
+                              profile.businessName,
+                            ),
                             _buildRowItem('Category', profile.category),
                             _buildRowItem('Location', profile.location),
                           ],
                         ),
-                        
+
                         _buildSection(
                           title: 'ACCOUNT',
                           items: [
@@ -248,28 +271,19 @@ class ProfileView extends StatelessWidget {
                         ),
 
                         _buildSection(
-                          title: 'SETTINGS',
+                          title: 'MANAGE',
                           items: [
-                            _buildRowItemWidget(
-                              'Notifications',
-                              CupertinoSwitch(
-                                value: true,
-                                activeColor: const Color(0xFFFF4040),
-                                onChanged: (val) {},
+                            InkWell(
+                              onTap: () => unawaited(
+                                context.push(AppRoutes.services),
                               ),
-                            ),
-                          ],
-                        ),
-
-                        _buildSection(
-                          title: 'SUPPORT',
-                          items: [
-                            _buildRowItemWidget(
-                              'Help & Support',
-                              const Icon(
-                                Icons.chevron_right_rounded,
-                                size: 20,
-                                color: Color(0xFF9CA3AF),
+                              child: _buildRowItemWidget(
+                                'Services',
+                                const Icon(
+                                  Icons.chevron_right_rounded,
+                                  size: 20,
+                                  color: Color(0xFF9CA3AF),
+                                ),
                               ),
                             ),
                           ],
@@ -288,7 +302,9 @@ class ProfileView extends StatelessWidget {
                             onTap: () => _onLogout(context),
                             child: Container(
                               height: 48,
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
                               alignment: Alignment.centerLeft,
                               child: const Text(
                                 'Log Out',
@@ -368,6 +384,9 @@ class ProfileView extends StatelessWidget {
       title,
       Text(
         value,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.end,
         style: const TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w400,
@@ -388,7 +407,6 @@ class ProfileView extends StatelessWidget {
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             title,
@@ -399,7 +417,12 @@ class ProfileView extends StatelessWidget {
               fontFamily: 'Inter',
             ),
           ),
-          trailing,
+          const SizedBox(width: 16),
+          // Long values (e.g. business names) truncate instead of
+          // overflowing the row.
+          Expanded(
+            child: Align(alignment: Alignment.centerRight, child: trailing),
+          ),
         ],
       ),
     );
